@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netzentgelt-Vergleich Österreich</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --border: #e5e7eb; --text: #1f2937; --muted: #6b7280; --soft: #f9fafb;
+    --primary: #1e3a8a; --accent: #2563eb; --accent-soft: #eff6ff; --danger: #dc2626;
+    --good: #15803d; --good-soft: #f0fdf4; --warn: #b45309; --warn-soft: #fffbeb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; display: grid; gap: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.04); min-width: 0; }
+  h1 { margin: 0 0 6px; color: var(--primary); font-size: 28px; }
+  h3 { margin: 0 0 14px; font-size: 17px; }
+  .muted { color: var(--muted); } .small { font-size: 13px; } .center { text-align: center; }
+  .hidden { display: none !important; }
+  #dropzone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 36px 16px; text-align: center; cursor: pointer; transition: background .15s; }
+  #dropzone:hover, #dropzone.dragover { background: var(--soft); border-color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+  .opt label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  select, input[type=number] { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 14px; background: var(--card); color: var(--text); width: 100%; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--text) !important; }
+  button { font: inherit; cursor: pointer; border-radius: 6px; }
+  .btn-ghost { background: none; border: 1px solid #cbd5e1; padding: 6px 12px; color: var(--text); }
+  .link { background: none; border: 0; color: var(--accent); padding: 0; font-size: 14px; }
+  .link:hover { text-decoration: underline; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .kpi .lbl { font-size: 12px; text-transform: uppercase; color: var(--muted); font-weight: 600; letter-spacing: .03em; }
+  .kpi .val { font-size: 26px; font-weight: 700; margin-top: 4px; color: var(--primary); }
+  .kpi .val span { font-size: 15px; font-weight: 400; color: var(--muted); }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chart-box { position: relative; height: 270px; }
+  .chart-box.tall { height: 380px; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { background: var(--soft); color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; text-align: left; vertical-align: bottom; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tfoot td { font-weight: 700; border-top: 2px solid #d1d5db; }
+  #regionBody tr { cursor: pointer; }
+  #regionBody tr:hover { background: var(--soft); }
+  #regionBody tr.mine { background: var(--accent-soft); font-weight: 600; }
+  .pos { color: var(--danger); } .neg { color: var(--good); }
+  .panel { background: var(--soft); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .panel input[type=number] { min-width: 70px; padding: 4px 6px; font-size: 13px; }
+  .notice { border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 12px; }
+  .notice.warn { background: var(--warn-soft); color: var(--warn); border: 1px solid #fde68a; }
+  .notice.err { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  .notice.info { background: var(--accent-soft); color: var(--text); border: 1px solid #bfdbfe; }
+  .notice ul { margin: 4px 0 0; padding-left: 18px; }
+  input[type=range] { width: 100%; }
+  .shave-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
+  .shave-out div { background: var(--soft); border-radius: 8px; padding: 10px 12px; }
+  .shave-out b { display: block; font-size: 18px; margin-top: 2px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0f172a; --card:#111827; --border:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --soft:#0b1220; --primary:#93c5fd; --accent:#3b82f6; --accent-soft:#172554; --good:#4ade80; --good-soft:#052e16; --warn:#fbbf24; --warn-soft:#291c05; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card center">
+    <h1>Netzentgelt-Vergleich Österreich</h1>
+    <div class="muted">15-Minuten-Lastprofil hochladen – die Netzkosten 2026 und der neue Leistungstarif 2027 werden sofort für alle 14 Netzbereiche berechnet. Die Datei wird nur lokal im Browser verarbeitet.</div>
+  </div>
+
+  <div class="card">
+    <div id="dropzone">
+      <div style="font-size:17px;font-weight:600">Lastprofil hier ablegen</div>
+      <div class="muted small" style="margin-top:4px">oder klicken zum Auswählen (CSV, Trennzeichen ; , oder Tab · Werte in kW oder kWh je Viertelstunde)</div>
+      <input type="file" id="fileInput" accept=".csv,.txt" class="hidden">
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="opt" style="min-width:190px"><label>Mein Netzbereich</label><select id="optRegion"></select></div>
+      <div class="opt" style="min-width:160px"><label>Einheit der Werte</label>
+        <select id="optUnit"><option value="auto">Automatisch</option><option value="kw">Leistung (kW)</option><option value="kwh">Energie je Intervall (kWh)</option></select></div>
+      <div class="opt" style="min-width:160px"><label>Zeitstempel markiert</label>
+        <select id="optStamp"><option value="auto">Automatisch</option><option value="start">Intervallbeginn</option><option value="end">Intervallende</option></select></div>
+      <div class="opt" style="min-width:140px"><label>Auswertungsjahr</label><select id="optYear" disabled><option>–</option></select></div>
+      <div class="opt"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="optGross" checked> inkl. 20 % USt</label></div>
+      <div class="opt"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="optAnnualize"> Fehlende Daten hochrechnen</label></div>
+    </div>
+    <div id="errorMsg" class="notice err hidden"></div>
+    <div id="qualityMsg" class="notice warn hidden"></div>
+  </div>
+
+  <div id="results" class="hidden" style="display:grid;gap:20px">
+
+    <div class="kpis">
+      <div class="card kpi"><div class="lbl">Jahresverbrauch</div><div class="val" id="valConsumption">–</div><div class="sub" id="subConsumption"></div></div>
+      <div class="card kpi"><div class="lbl">Leistungsspitze (15 min)</div><div class="val" style="color:var(--danger)" id="valPeak">–</div><div class="sub" id="subPeak"></div></div>
+      <div class="card kpi"><div class="lbl">Ø Monatsspitze</div><div class="val" id="valAvgPeak">–</div><div class="sub">Basis des Leistungspreises (min. 2 kW)</div></div>
+      <div class="card kpi"><div class="lbl" id="lblMine">Mein Netzbereich</div><div class="val" id="valMine">–</div><div class="sub" id="subMine"></div></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <h3 style="margin:0">Netzkosten je Netzbereich (€/Jahr, <span id="lblVat">brutto</span>)</h3>
+        <div style="display:flex;gap:14px;align-items:center">
+          <button class="link" id="toggleConfig">Tarife anzeigen / anpassen</button>
+          <button class="btn-ghost small" id="btnExport">CSV exportieren</button>
+        </div>
+      </div>
+
+      <div id="configSection" class="panel hidden">
+        <div class="small muted" style="margin-bottom:10px">Alle Werte <b>netto</b>. 2026: Arbeitspreis & Netzverlust in ct/kWh, Messentgelt €/Monat, Pauschale 54 €/Jahr (überall gleich). 2027: Leistungspreis in €/kW <b>pro Monat</b>, Arbeitspreis ct/kWh. Änderungen werden sofort berechnet und im Browser gespeichert.</div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="opt" style="width:150px"><label>Pauschale 2026 (€/Jahr)</label><input type="number" id="cfgGp26" step="0.01"></div>
+          <div class="opt" style="width:150px"><label>Staffelgrenze 2027 (kW)</label><input type="number" id="cfgLimit" step="0.1"></div>
+          <div class="opt" style="width:150px"><label>Mindestleistung 2027 (kW)</label><input type="number" id="cfgMin" step="0.1"></div>
+        </div>
+        <div class="tbl-wrap"><table id="cfgTable"></table></div>
+        <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn-ghost small" id="btnReset">Standardwerte</button>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Netzbereich</th>
+            <th class="num">2026<br>Ist</th>
+            <th class="num">2027<br>Leistungstarif</th>
+            <th class="num">Δ 2027 zu 2026</th>
+            <th class="num" id="thShave">2027 mit<br>Spitzenkappung</th>
+          </tr></thead>
+          <tbody id="regionBody"></tbody>
+        </table>
+      </div>
+      <div class="muted small" style="margin-top:8px">Zeile anklicken, um sie als eigenen Netzbereich zu wählen. Rot = teurer, grün = günstiger als 2026.</div>
+      <div class="chart-box tall" style="margin-top:16px"><canvas id="regionChart"></canvas></div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3 id="detailTitle">Aufschlüsselung</h3>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Kostenart</th><th class="num">2026</th><th class="num">2027</th><th class="num">2027 gekappt</th></tr></thead>
+          <tbody id="detailBody"></tbody>
+          <tfoot><tr id="detailSum"></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="card">
+        <h3>Monatliche Leistungsspitzen</h3>
+        <div class="chart-box"><canvas id="peakChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Was-wäre-wenn: Spitzenkappung (Lastmanagement / Batterie / Wallbox drosseln)</h3>
+      <div class="muted small" style="margin-bottom:10px">Begrenzt jede Viertelstunde auf die gewählte Leistung. Die Energie bleibt gleich (wird nur verschoben); es sinkt der Leistungspreis – in allen Netzbereichen.</div>
+      <div class="row">
+        <div style="flex:1;min-width:220px"><input type="range" id="shaveRange" min="2" max="20" step="0.1" value="20"></div>
+        <div class="opt" style="width:120px"><label>Grenze (kW)</label><input type="number" id="shaveInput" step="0.1" min="0"></div>
+      </div>
+      <div class="shave-out">
+        <div><span class="muted small" id="lblShSave">Einsparung (mein Netzbereich)</span><b id="shSave">–</b></div>
+        <div><span class="muted small">Zu verschiebende Energie</span><b id="shEnergy">–</b></div>
+        <div><span class="muted small">Betroffene Viertelstunden</span><b id="shCount">–</b></div>
+        <div><span class="muted small">Größtes zusammenhängendes Ereignis</span><b id="shMaxEvt">–</b></div>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h3>Höchste 10 Viertelstunden</h3>
+        <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Zeitpunkt</th><th class="num">Leistung</th></tr></thead><tbody id="topBody"></tbody></table></div>
+      </div>
+      <div class="card small">
+        <h3>Berechnungsgrundlage</h3>
+        <ul style="padding-left:18px;margin:0;line-height:1.55">
+          <li><b>2026:</b> Arbeitspreis × kWh + Netzverlust × kWh + Pauschale 54 €/Jahr + Messentgelt (SNE-V 2018 i.d.F. 2026).</li>
+          <li><b>2027 Leistungstarif:</b> je Kalendermonat die höchste Viertelstunde (min. 2 kW); bis 10 kW zum Grundsatz, der Teil darüber zum höheren Satz (rund 1,5×). Dazu Arbeitspreis × kWh und Netzverlust × kWh. Pauschale und Messentgelt entfallen.</li>
+          <li><b>Werte 2027 sind ein Entwurf</b> (Begutachtungsentwurf SNE-T-V 2027 der E-Control vom 29.10.2026) und noch nicht verbindlich. Netzverlust 2027 ist darin nicht veröffentlicht – hier wird der Wert von 2026 angenommen.</li>
+          <li>Nicht berücksichtigt: SNAP/WiNAP-Rabatte, flexible Leistung (−75 %), Energiegemeinschaften, Abgaben und Energiepreis.</li>
+          <li>Umstellung für Haushalte frühestens 1.12.2027, spätestens 1.7.2028 – bis dahin gilt eine Übergangspauschale.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   1) TARIFDATEN (netto)
+   2026: fixkostenreduzierer.at (SNE-V 2018, Stand 2026)
+   2027: stromliste.at nach E-Control-Begutachtungsentwurf SNE-T-V 2027 (29.10.2026)
+   ===================================================================== */
+const DEFAULT_DATA = {
+  gp26: 54.00,       // Netz-Pauschale 2026 €/Jahr (alle Netzbereiche)
+  limit: 10,         // Staffelgrenze kW
+  minKw: 2,          // Mindestleistung je Monat kW
+  regions: [
+    // id, name, Land, ap26 ct, nv26 ct, me26 €/Mon, lp1 €/kW/Mon, lp2 €/kW/Mon, ap27 ct, nv27 ct, vat
+    { id: 'bgld', name: 'Burgenland',          ap26: 8.46,  nv26: 0.00, me26: 2.40, lp1: 3.40, lp2: 5.10, ap27: 6.60,  nv27: 0.00, vat: 20 },
+    { id: 'ktn',  name: 'Kärnten',             ap26: 9.67,  nv26: 0.37, me26: 2.40, lp1: 3.51, lp2: 5.27, ap27: 7.83,  nv27: 0.37, vat: 20 },
+    { id: 'kla',  name: 'Kärnten – Klagenfurt', ap26: 6.90,  nv26: 0.58, me26: 2.40, lp1: 2.50, lp2: 3.75, ap27: 5.70,  nv27: 0.58, vat: 20 },
+    { id: 'noe',  name: 'Niederösterreich',    ap26: 8.79,  nv26: 0.38, me26: 2.18, lp1: 2.61, lp2: 3.92, ap27: 6.11,  nv27: 0.38, vat: 20 },
+    { id: 'ooe',  name: 'Oberösterreich',      ap26: 6.29,  nv26: 0.53, me26: 2.40, lp1: 2.41, lp2: 3.62, ap27: 5.41,  nv27: 0.53, vat: 20 },
+    { id: 'linz', name: 'Oberösterreich – Linz', ap26: 5.57, nv26: 0.49, me26: 2.37, lp1: 2.57, lp2: 3.86, ap27: 5.28,  nv27: 0.49, vat: 20 },
+    { id: 'sbg',  name: 'Salzburg',            ap26: 6.59,  nv26: 0.36, me26: 2.40, lp1: 2.10, lp2: 3.15, ap27: 5.19,  nv27: 0.36, vat: 20 },
+    { id: 'stmk', name: 'Steiermark',          ap26: 8.82,  nv26: 0.34, me26: 2.40, lp1: 3.21, lp2: 4.82, ap27: 6.59,  nv27: 0.34, vat: 20 },
+    { id: 'graz', name: 'Steiermark – Graz',   ap26: 5.17,  nv26: 0.66, me26: 2.40, lp1: 2.28, lp2: 3.42, ap27: 5.17,  nv27: 0.66, vat: 20 },
+    { id: 'tir',  name: 'Tirol',               ap26: 6.81,  nv26: 0.29, me26: 2.40, lp1: 2.45, lp2: 3.68, ap27: 4.98,  nv27: 0.29, vat: 20 },
+    { id: 'ibk',  name: 'Tirol – Innsbruck',   ap26: 8.03,  nv26: 0.45, me26: 2.40, lp1: 3.26, lp2: 4.89, ap27: 6.74,  nv27: 0.45, vat: 20 },
+    { id: 'vbg',  name: 'Vorarlberg',          ap26: 4.96,  nv26: 0.39, me26: 1.60, lp1: 2.00, lp2: 3.00, ap27: 3.77,  nv27: 0.39, vat: 20 },
+    { id: 'kwt',  name: 'Vorarlberg – Kleinwalsertal', ap26: 17.73, nv26: 0.40, me26: 2.40, lp1: 5.83, lp2: 8.75, ap27: 11.10, nv27: 0.40, vat: 19 },
+    { id: 'wien', name: 'Wien',                ap26: 6.98,  nv26: 0.70, me26: 2.18, lp1: 2.46, lp2: 3.69, ap27: 5.58,  nv27: 0.70, vat: 20 },
+  ],
+};
+const CFG_COLS = [['ap26','AP 2026<br>ct/kWh',0.01],['nv26','NV 2026<br>ct/kWh',0.01],['me26','Mess 2026<br>€/Mon',0.01],['lp1','LP ≤ Grenze<br>€/kW·Mon',0.01],['lp2','LP > Grenze<br>€/kW·Mon',0.01],['ap27','AP 2027<br>ct/kWh',0.01],['nv27','NV 2027<br>ct/kWh',0.01],['vat','USt<br>%',1]];
+
+/* =====================================================================
+   2) REINE BERECHNUNGSLOGIK (ohne DOM)
+   ===================================================================== */
+const NetzLogic = (() => {
+  function parseNumber(s) {
+    s = String(s).trim().replace(/["'\s]/g, '');
+    if (!s) return NaN;
+    const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+    if (lc > -1 && ld > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    else if (lc > -1) s = s.replace(',', '.');
+    return Number(s);
+  }
+
+  // DD.MM.YYYY | YYYY-MM-DD | DD/MM/YYYY, optional Uhrzeit (auch ISO "T")
+  function parseDateTime(dateStr, timeStr) {
+    let s = String(dateStr).trim().replace(/"/g, '');
+    if (timeStr !== undefined) s += ' ' + String(timeStr).trim().replace(/"/g, '');
+    const m = s.match(/^(\d{1,4})[.\-\/](\d{1,2})[.\-\/](\d{1,4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if (!m) return null;
+    let y, mo, d;
+    if (m[1].length === 4) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; }
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    // "Wanduhr-UTC": keine Sommerzeit-Sprünge, Monatsgrenzen bleiben exakt
+    return Date.UTC(y, mo - 1, d, m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
+  }
+
+  function detectSeparator(line) {
+    const c = { ';': 0, ',': 0, '\t': 0 };
+    for (const ch of line) if (ch in c) c[ch]++;
+    return Object.keys(c).reduce((a, b) => c[b] > c[a] ? b : a);
+  }
+
+  function parseCSV(text, opts = {}) {
+    text = text.replace(/^\uFEFF/, '');
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) throw new Error('Die Datei scheint leer zu sein.');
+
+    // Kopfzeile = letzte Nicht-Datenzeile vor der ersten Datenzeile (Metadatenzeilen der Netzbetreiber-Exporte überspringen)
+    let headIdx = 0;
+    for (let i = 0; i < Math.min(lines.length - 1, 40); i++) {
+      if (parseDateTime(lines[i + 1].split(/[;,\t]/)[0]) !== null && parseDateTime(lines[i].split(/[;,\t]/)[0]) === null) { headIdx = i; break; }
+    }
+    const sep = detectSeparator(lines[headIdx]);
+    const header = lines[headIdx].split(sep).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+
+    const sample = (lines[headIdx + 1] || '').split(sep);
+    let dateIdx = -1, timeIdx = -1, valIdx = -1, unitFromHeader = null;
+    header.forEach((h, i) => {
+      if (dateIdx < 0 && /datum|date|zeitstempel|timestamp|von|beginn|start/.test(h)) dateIdx = i;
+      else if (timeIdx < 0 && /^(zeit|uhrzeit|time)\b/.test(h)) timeIdx = i;
+    });
+    if (dateIdx < 0) dateIdx = 0;
+    // Wertespalte: nur Spalten mit Zahlen in der ersten Datenzeile; beste Übereinstimmung im Spaltennamen gewinnt
+    const rank = h => /^(wert|value)\b/.test(h) ? 5 : /kwh|kw\b|leistung/.test(h) ? 4 : /verbrauch|bezug|energie(?!gemeinschaft)/.test(h) ? 3 : /wert|value/.test(h) ? 2 : 1;
+    let bestRank = 0;
+    header.forEach((h, i) => {
+      if (i === dateIdx || i === timeIdx) return;
+      const s = (sample[i] || '').trim();
+      if (!isFinite(parseNumber(s)) || parseDateTime(s) !== null || /^\d{1,2}:\d\d/.test(s)) return;
+      const r = rank(h);
+      if (r > bestRank) { bestRank = r; valIdx = i; }
+    });
+    if (valIdx < 0) valIdx = header.length - 1 > dateIdx ? header.length - 1 : 1;
+    const vh = header[valIdx] || '';
+    unitFromHeader = /kwh/.test(vh) ? 'kwh' : /kw\b|leistung/.test(vh) ? 'kw' : /verbrauch|energie|bezug/.test(vh) ? 'kwh' : null;
+    if (timeIdx >= 0 && /\d:\d\d/.test(sample[dateIdx] || '')) timeIdx = -1;
+    // Eigene Einheitenspalte (z. B. Smart-Meter-Export: "Wert;Einheit" = "0,063;kWh")
+    const unitIdx = header.findIndex(h => /^(einheit|unit)$/.test(h));
+    if (unitIdx >= 0) { const u = (sample[unitIdx] || '').toLowerCase().replace(/"/g, '').trim(); if (u === 'kwh' || u === 'wh') unitFromHeader = 'kwh'; else if (u === 'kw' || u === 'w') unitFromHeader = 'kw'; }
+    const qualIdx = header.findIndex(h => /^(qualität|qualitaet|quality)$/.test(h));
+    const qualityCounts = {};
+
+    const points = []; let skipped = 0;
+    for (let i = headIdx + 1; i < lines.length; i++) {
+      const cols = lines[i].split(sep);
+      let raw = cols[valIdx];
+      if (sep === ',' && cols.length > header.length) raw = cols.slice(valIdx).join(','); // "12,5" bei Komma-Trenner
+      const t = parseDateTime(cols[dateIdx] ?? '', timeIdx >= 0 ? cols[timeIdx] : undefined);
+      const v = parseNumber(raw ?? '');
+      if (t === null || !isFinite(v)) { skipped++; continue; }
+      if (qualIdx >= 0) { const q = (cols[qualIdx] || '').trim(); qualityCounts[q] = (qualityCounts[q] || 0) + 1; }
+      points.push({ t, v, label: (cols[dateIdx] + (timeIdx >= 0 ? ' ' + cols[timeIdx] : '')).replace(/"/g, '').trim() });
+    }
+    if (!points.length) throw new Error('Keine verwertbaren Daten (Zeitstempel & Wert) gefunden.');
+    points.sort((a, b) => a.t - b.t);
+
+    const diffs = {};
+    for (let i = 1; i < Math.min(points.length, 5000); i++) { const d = points[i].t - points[i - 1].t; if (d > 0) diffs[d] = (diffs[d] || 0) + 1; }
+    const intervalMs = +Object.keys(diffs).reduce((a, b) => diffs[b] > diffs[a] ? b : a, 900000);
+
+    const unit = opts.unit && opts.unit !== 'auto' ? opts.unit : (unitFromHeader || 'kw');
+    let stamp = opts.stamp && opts.stamp !== 'auto' ? opts.stamp : null;
+    if (!stamp) {
+      const f = new Date(points[0].t);
+      stamp = (f.getUTCHours() * 3600000 + f.getUTCMinutes() * 60000) === intervalMs ? 'end' : 'start';
+    }
+    if (stamp === 'end') points.forEach(p => p.t -= intervalMs);
+
+    return { points, intervalMs, unit, stamp, skipped, qualityCounts, columns: { date: header[dateIdx], time: timeIdx >= 0 ? header[timeIdx] : null, value: header[valIdx] } };
+  }
+
+  function analyze(parsed, year, { annualize = false } = {}) {
+    const hours = parsed.intervalMs / 3600000;
+    const toKw = parsed.unit === 'kwh' ? v => v / hours : v => v;
+    const pts = parsed.points.filter(p => new Date(p.t).getUTCFullYear() === year).map(p => ({ t: p.t, label: p.label, kw: toKw(p.v) }));
+
+    const monthlyPeaks = Array(12).fill(0), monthlyPeakTimes = Array(12).fill(''), monthlyKwh = Array(12).fill(0), monthlyCount = Array(12).fill(0);
+    let totalKwh = 0, feedInKwh = 0, peak = { kw: 0, label: '' };
+    for (const p of pts) {
+      const m = new Date(p.t).getUTCMonth();
+      monthlyCount[m]++;
+      if (p.kw < 0) { feedInKwh += -p.kw * hours; continue; }   // negative Werte = Einspeisung
+      const e = p.kw * hours; totalKwh += e; monthlyKwh[m] += e;
+      if (p.kw > monthlyPeaks[m]) { monthlyPeaks[m] = p.kw; monthlyPeakTimes[m] = p.label; }
+      if (p.kw > peak.kw) peak = { kw: p.kw, label: p.label };
+    }
+
+    const expectedPerMonth = monthlyCount.map((_, m) => new Date(Date.UTC(year, m + 1, 0)).getUTCDate() * 24 / hours);
+    const coverage = pts.length / expectedPerMonth.reduce((a, b) => a + b, 0);
+    const missingMonths = monthlyCount.map((c, m) => c === 0 ? m : -1).filter(m => m >= 0);
+    const partialMonths = monthlyCount.map((c, m) => c > 0 && c < expectedPerMonth[m] * 0.95 ? m : -1).filter(m => m >= 0);
+
+    // Abrechnungsmonate: Monate mit Daten (oder alle 12 bei Hochrechnung)
+    let billingPeaks = monthlyPeaks.map((p, m) => monthlyCount[m] ? p : null), billingKwh = totalKwh;
+    if (annualize && coverage < 0.999 && pts.length) {
+      billingKwh = totalKwh / coverage;
+      const have = billingPeaks.filter(p => p !== null);
+      const avg = have.reduce((a, b) => a + b, 0) / (have.length || 1);
+      billingPeaks = billingPeaks.map(p => p === null ? avg : p);
+    }
+    const top = pts.filter(p => p.kw > 0).sort((a, b) => b.kw - a.kw).slice(0, 10);
+    return { year, pts, hours, totalKwh, feedInKwh, peak, monthlyPeaks, monthlyPeakTimes, monthlyKwh, monthlyCount, coverage, missingMonths, partialMonths, billingPeaks, billingKwh, top };
+  }
+
+  // Netzkosten eines Netzbereichs (netto oder brutto), Ergebnis in €/Jahr
+  function costs(an, peaks, r, D, gross) {
+    const f = gross ? 1 + r.vat / 100 : 1;
+    const months = peaks.filter(p => p !== null);
+    const share = months.length / 12;                     // Pauschalen nur anteilig für den erfassten Zeitraum
+    const kwh = an.billingKwh;
+    const y26 = { grund: D.gp26 * share, arbeit: kwh * r.ap26 / 100, verlust: kwh * r.nv26 / 100, mess: r.me26 * months.length };
+    const lp = months.reduce((s, p) => { const k = Math.max(p, D.minKw); return s + Math.min(k, D.limit) * r.lp1 + Math.max(0, k - D.limit) * r.lp2; }, 0);
+    const y27 = { grund: lp, arbeit: kwh * r.ap27 / 100, verlust: kwh * r.nv27 / 100, mess: 0 };
+    for (const o of [y26, y27]) { for (const k in o) o[k] *= f; o.sum = o.grund + o.arbeit + o.verlust + o.mess; }
+    return { y26, y27 };
+  }
+
+  function shave(an, cap) {
+    let energy = 0, count = 0, maxEvt = 0, evt = 0, lastT = null;
+    for (const p of an.pts) {
+      if (p.kw > cap) {
+        const e = (p.kw - cap) * an.hours; energy += e; count++;
+        evt = (lastT !== null && p.t - lastT <= an.hours * 3600000) ? evt + e : e;
+        maxEvt = Math.max(maxEvt, evt); lastT = p.t;
+      }
+    }
+    return { peaks: an.billingPeaks.map(p => p === null ? null : Math.min(p, cap)), energy, count, maxEvt };
+  }
+
+  return { parseNumber, parseDateTime, parseCSV, analyze, costs, shave };
+})();
+
+/* =====================================================================
+   3) OBERFLÄCHE
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const fC = v => v.toLocaleString('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const f0 = v => Math.round(v).toLocaleString('de-AT');
+const fK = (v, d = 3) => v.toLocaleString('de-AT', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sign = v => (v > 0 ? '+' : '') ;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const MONTHS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+
+let D = loadData(), parsed = null, an = null, lastFileText = null, results = [], peakChart = null, regionChart = null;
+let mine = store.get('netzMine') || 'noe';
+
+function loadData() {
+  const d = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  const s = store.get('netzTarifDaten');
+  if (s) { ['gp26', 'limit', 'minKw'].forEach(k => { if (typeof s[k] === 'number') d[k] = s[k]; });
+           (s.regions || []).forEach(sr => { const r = d.regions.find(x => x.id === sr.id); if (r) Object.assign(r, sr); }); }
+  return d;
+}
+
+function buildRegionSelect() {
+  $('optRegion').innerHTML = D.regions.map(r => `<option value="${r.id}" ${r.id === mine ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
+}
+$('optRegion').addEventListener('change', () => setMine($('optRegion').value));
+function setMine(id) { mine = id; store.set('netzMine', id); $('optRegion').value = id; render(); }
+
+function buildConfig() {
+  $('cfgGp26').value = D.gp26; $('cfgLimit').value = D.limit; $('cfgMin').value = D.minKw;
+  $('cfgTable').innerHTML = `<thead><tr><th>Netzbereich</th>${CFG_COLS.map(c => `<th class="num">${c[1]}</th>`).join('')}</tr></thead><tbody>` +
+    D.regions.map((r, i) => `<tr><td>${esc(r.name)}</td>${CFG_COLS.map(([k, , st]) => `<td><input type="number" step="${st}" data-i="${i}" data-k="${k}" value="${r[k]}"></td>`).join('')}</tr>`).join('') + '</tbody>';
+  $('cfgTable').querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    D.regions[+inp.dataset.i][inp.dataset.k] = parseFloat(inp.value) || 0; store.set('netzTarifDaten', D); render();
+  }));
+}
+[['cfgGp26', 'gp26'], ['cfgLimit', 'limit'], ['cfgMin', 'minKw']].forEach(([id, k]) => $(id).addEventListener('input', () => { D[k] = parseFloat($(id).value) || 0; store.set('netzTarifDaten', D); render(); }));
+$('btnReset').addEventListener('click', () => { D = JSON.parse(JSON.stringify(DEFAULT_DATA)); store.set('netzTarifDaten', null); buildConfig(); render(); });
+$('toggleConfig').addEventListener('click', () => $('configSection').classList.toggle('hidden'));
+
+// Upload
+const dz = $('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
+dz.addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', e => { if (e.target.files.length) readFile(e.target.files[0]); });
+
+function readFile(file) {
+  const r = new FileReader();
+  r.onload = e => {
+    if (e.target.result.includes('\uFFFD')) {        // kein UTF-8 → Windows-1252 (Excel-Export)
+      const r2 = new FileReader(); r2.onload = e2 => { lastFileText = e2.target.result; processFile(); }; r2.readAsText(file, 'windows-1252'); return;
+    }
+    lastFileText = e.target.result; processFile();
+  };
+  r.onerror = () => showError('Fehler beim Lesen der Datei.');
+  r.readAsText(file, 'utf-8');
+}
+['optUnit', 'optStamp'].forEach(id => $(id).addEventListener('change', () => lastFileText && processFile()));
+$('optYear').addEventListener('change', () => analyzeYear(+$('optYear').value));
+$('optAnnualize').addEventListener('change', () => an && analyzeYear(an.year));
+$('optGross').addEventListener('change', render);
+
+function showError(msg) { $('errorMsg').textContent = msg; $('errorMsg').classList.remove('hidden'); $('results').classList.add('hidden'); $('qualityMsg').classList.add('hidden'); }
+
+function processFile() {
+  $('errorMsg').classList.add('hidden');
+  try { parsed = NetzLogic.parseCSV(lastFileText, { unit: $('optUnit').value, stamp: $('optStamp').value }); }
+  catch (e) { return showError(e.message); }
+  const counts = {};
+  parsed.points.forEach(p => { const y = new Date(p.t).getUTCFullYear(); counts[y] = (counts[y] || 0) + 1; });
+  const years = Object.keys(counts).map(Number).sort();
+  const best = years.reduce((a, b) => counts[b] > counts[a] ? b : a);
+  $('optYear').innerHTML = years.map(y => `<option value="${y}" ${y === best ? 'selected' : ''}>${y} (${counts[y].toLocaleString('de-AT')} Werte)</option>`).join('');
+  $('optYear').disabled = years.length < 2;
+  analyzeYear(best);
+  $('results').classList.remove('hidden');
+  $('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+function analyzeYear(year) {
+  an = NetzLogic.analyze(parsed, year, { annualize: $('optAnnualize').checked });
+  const notes = [];
+  if (an.coverage < 0.98) notes.push(`Nur ${fK(an.coverage * 100, 1)} % der Viertelstunden von ${year} vorhanden – ${$('optAnnualize').checked ? 'Kosten werden auf ein Jahr hochgerechnet.' : 'Kosten gelten nur für den erfassten Zeitraum (Option „Hochrechnen“).'}`);
+  if (an.missingMonths.length) notes.push(`Monate ohne Daten: ${an.missingMonths.map(m => MONTHS[m]).join(', ')}`);
+  if (an.partialMonths.length) notes.push(`Unvollständige Monate: ${an.partialMonths.map(m => MONTHS[m]).join(', ')}`);
+  if (an.feedInKwh > 0) notes.push(`Negative Werte als Einspeisung gewertet (${f0(an.feedInKwh)} kWh) und nicht verrechnet.`);
+  const qc = parsed.qualityCounts || {}, qKeys = Object.keys(qc);
+  if (qKeys.length > 1 || (qKeys.length === 1 && qKeys[0] !== 'L1')) {
+    const notL1 = qKeys.filter(k => k !== 'L1').reduce((s, k) => s + qc[k], 0);
+    if (notL1) notes.push(`${notL1.toLocaleString('de-AT')} Werte sind keine gemessenen Echtwerte (Qualität ${qKeys.filter(k => k !== 'L1').join(', ')}).`);
+  }
+  if (parsed.skipped > 0) notes.push(`${parsed.skipped} Zeilen ohne gültigen Zeitstempel/Wert übersprungen.`);
+  if (parsed.intervalMs !== 900000) notes.push(`Erkanntes Intervall: ${parsed.intervalMs / 60000} min (erwartet 15 min) – Spitzen sind ggf. unterschätzt.`);
+  const info = `Erkannt: Spalten „${parsed.columns.date}${parsed.columns.time ? ' + ' + parsed.columns.time : ''}“ / „${parsed.columns.value}“, Einheit ${parsed.unit === 'kwh' ? 'kWh je Intervall' : 'kW'}, Zeitstempel = ${parsed.stamp === 'end' ? 'Intervallende' : 'Intervallbeginn'}.`;
+  $('qualityMsg').className = 'notice ' + (notes.length ? 'warn' : 'info');
+  $('qualityMsg').innerHTML = `<div>${esc(info)}</div>` + (notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '');
+
+  const maxPeak = Math.max(...an.monthlyPeaks, D.minKw + 0.1);
+  $('shaveRange').max = Math.ceil(maxPeak * 10) / 10;
+  $('shaveRange').value = $('shaveRange').max;
+  $('shaveInput').value = $('shaveRange').max;
+  render();
+}
+
+function render() {
+  if (!an) return;
+  const gross = $('optGross').checked;
+  $('lblVat').textContent = gross ? 'brutto' : 'netto';
+  const capIn = parseFloat($('shaveInput').value);
+  const maxBill = Math.max(...an.billingPeaks.filter(p => p !== null), 0);
+  const capped = isFinite(capIn) && capIn < maxBill;
+  const sh = NetzLogic.shave(an, capped ? capIn : Infinity);
+
+  results = D.regions.map(r => {
+    const c = NetzLogic.costs(an, an.billingPeaks, r, D, gross);
+    const cs = NetzLogic.costs(an, sh.peaks, r, D, gross).y27;
+    return { r, ...c, shaved: cs };
+  });
+  const me = results.find(x => x.r.id === mine) || results[0];
+
+  // KPIs
+  $('valConsumption').innerHTML = `${f0(an.totalKwh)} <span>kWh</span>`;
+  $('subConsumption').textContent = an.billingKwh !== an.totalKwh ? `hochgerechnet: ${f0(an.billingKwh)} kWh` : `Jahr ${an.year}`;
+  $('valPeak').innerHTML = `${fK(an.peak.kw)} <span>kW</span>`;
+  $('subPeak').textContent = an.peak.label;
+  const bp = an.billingPeaks.filter(p => p !== null).map(p => Math.max(p, D.minKw));
+  $('valAvgPeak').innerHTML = `${fK(bp.reduce((a, b) => a + b, 0) / (bp.length || 1))} <span>kW</span>`;
+  const dMe = me.y27.sum - me.y26.sum;
+  $('lblMine').textContent = me.r.name;
+  $('valMine').innerHTML = `<span style="color:${dMe > 0 ? 'var(--danger)' : 'var(--good)'};font-size:26px;font-weight:700">${sign(dMe)}${fC(dMe)} €</span>`;
+  $('subMine').textContent = `2026: ${fC(me.y26.sum)} € → 2027: ${fC(me.y27.sum)} € (${sign(dMe)}${fK(dMe / me.y26.sum * 100, 1)} %)`;
+
+  // Tabelle aller Netzbereiche
+  $('regionBody').innerHTML = results.map(x => {
+    const d = x.y27.sum - x.y26.sum;
+    return `<tr data-id="${x.r.id}" class="${x.r.id === mine ? 'mine' : ''}">
+      <td>${esc(x.r.name)}</td><td class="num">${fC(x.y26.sum)}</td><td class="num">${fC(x.y27.sum)}</td>
+      <td class="num ${d > 0 ? 'pos' : 'neg'}">${sign(d)}${fC(d)} (${sign(d)}${fK(d / x.y26.sum * 100, 1)} %)</td>
+      <td class="num">${fC(x.shaved.sum)}</td></tr>`;
+  }).join('');
+  $('regionBody').querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => setMine(tr.dataset.id)));
+  $('thShave').innerHTML = capped ? `2027 gekappt<br>auf ${fK(capIn, 1)} kW` : '2027 mit<br>Spitzenkappung';
+
+  // Aufschlüsselung eigener Netzbereich
+  $('detailTitle').textContent = `Aufschlüsselung ${me.r.name}`;
+  const rows = [['grund', 'Pauschale / Leistungspreis'], ['arbeit', 'Netznutzung (Arbeitspreis)'], ['verlust', 'Netzverlust'], ['mess', 'Messentgelt']];
+  $('detailBody').innerHTML = rows.map(([k, l]) => `<tr><td>${l}</td><td class="num">${fC(me.y26[k])}</td><td class="num">${fC(me.y27[k])}</td><td class="num">${fC(me.shaved[k])}</td></tr>`).join('');
+  $('detailSum').innerHTML = `<td>Gesamt</td><td class="num">${fC(me.y26.sum)}</td><td class="num">${fC(me.y27.sum)}</td><td class="num">${fC(me.shaved.sum)}</td>`;
+
+  // Spitzenkappung
+  $('lblShSave').textContent = `Einsparung ${me.r.name}`;
+  $('shSave').textContent = `${fC(me.y27.sum - me.shaved.sum)} €/Jahr`;
+  $('shEnergy').textContent = `${fK(sh.energy, 1)} kWh/Jahr`;
+  $('shCount').textContent = `${sh.count.toLocaleString('de-AT')} × 15 min`;
+  $('shMaxEvt').textContent = `${fK(sh.maxEvt, 2)} kWh`;
+
+  $('topBody').innerHTML = an.top.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.label)}</td><td class="num">${fK(p.kw)} kW</td></tr>`).join('');
+
+  renderCharts(capped ? capIn : null);
+}
+
+function renderCharts(cap) {
+  const muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+  Chart.defaults.color = muted;
+
+  // Netzbereiche
+  if (regionChart) regionChart.destroy();
+  regionChart = new Chart($('regionChart'), {
+    type: 'bar',
+    data: {
+      labels: results.map(x => x.r.name.replace('Oberösterreich', 'OÖ').replace('Niederösterreich', 'NÖ')),
+      datasets: [
+        { label: '2026 Ist', data: results.map(x => +x.y26.sum.toFixed(2)), backgroundColor: results.map(x => x.r.id === mine ? '#64748b' : '#cbd5e1'), borderRadius: 3 },
+        { label: '2027 Leistungstarif', data: results.map(x => +x.y27.sum.toFixed(2)), backgroundColor: results.map(x => x.r.id === mine ? '#1d4ed8' : '#93c5fd'), borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fC(c.parsed.y)} €` } } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('de-AT') + ' €' } }, x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 60, minRotation: 40 } } },
+      onClick: (e, els) => { if (els.length) setMine(results[els[0].index].r.id); },
+    },
+  });
+
+  // Monatsspitzen
+  const sets = [
+    { type: 'bar', label: 'Leistungsspitze (kW)', data: an.monthlyPeaks, backgroundColor: an.monthlyPeaks.map(p => p > D.limit ? '#f87171' : '#60a5fa'), borderRadius: 4, barPercentage: 0.6, order: 3 },
+    { type: 'line', label: `Staffelgrenze ${fK(D.limit, 0)} kW`, data: MONTHS.map(() => D.limit), borderColor: '#f59e0b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, order: 1 },
+    { type: 'line', label: `Mindestleistung ${fK(D.minKw, 0)} kW`, data: MONTHS.map(() => D.minKw), borderColor: '#94a3b8', borderDash: [2, 3], pointRadius: 0, borderWidth: 1.5, order: 2 },
+  ];
+  if (cap !== null) sets.push({ type: 'line', label: `Kappung ${fK(cap, 1)} kW`, data: MONTHS.map(() => cap), borderColor: '#16a34a', pointRadius: 0, borderWidth: 2, order: 0 });
+  if (peakChart) peakChart.destroy();
+  peakChart = new Chart($('peakChart'), {
+    data: { labels: MONTHS, datasets: sets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: {
+          title: c => `${c[0].label} ${an.year}`,
+          label: c => c.datasetIndex === 0 ? `${fK(c.parsed.y)} kW` : c.dataset.label,
+          afterLabel: c => c.datasetIndex === 0 && an.monthlyPeakTimes[c.dataIndex] ? `Zeitpunkt: ${an.monthlyPeakTimes[c.dataIndex]}\nVerbrauch: ${f0(an.monthlyKwh[c.dataIndex])} kWh` : '',
+        } },
+      },
+      scales: { y: { beginAtZero: true }, x: { grid: { display: false } } },
+    },
+  });
+}
+
+$('shaveRange').addEventListener('input', () => { $('shaveInput').value = $('shaveRange').value; render(); });
+$('shaveInput').addEventListener('input', () => { $('shaveRange').value = $('shaveInput').value; render(); });
+
+$('btnExport').addEventListener('click', () => {
+  if (!results.length) return;
+  const n = v => v.toFixed(2).replace('.', ',');
+  const L = [`Netzkosten ${an.year} (${$('optGross').checked ? 'brutto' : 'netto'}) – Verbrauch ${f0(an.billingKwh)} kWh`, '',
+             'Netzbereich;2026 Ist;2027 Leistungstarif;Differenz;Differenz %;2027 gekappt'];
+  results.forEach(x => { const d = x.y27.sum - x.y26.sum; L.push([x.r.name, n(x.y26.sum), n(x.y27.sum), n(d), n(d / x.y26.sum * 100), n(x.shaved.sum)].join(';')); });
+  L.push('', 'Monat;Spitze kW;Zeitpunkt;Verbrauch kWh');
+  MONTHS.forEach((m, i) => L.push([m, an.monthlyPeaks[i].toFixed(3).replace('.', ','), an.monthlyPeakTimes[i], n(an.monthlyKwh[i])].join(';')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = `netzkosten_oesterreich_${an.year}.csv`; a.click();
+});
+
+buildRegionSelect();
+buildConfig();
+</script>
+</body>
+</html>
