@@ -2,11 +2,11 @@
 
 Vergleich der Netzkosten mit Leistungstarif ab 2027 – für alle 14 Netzbereiche in Österreich.
 
-Ein 15-Minuten-Lastprofil (CSV, z. B. Smart-Meter-Export des Netzbetreibers) hochladen, und das Tool berechnet sofort die jährlichen Netzkosten **2026 (Ist)** und **2027 (Leistungstarif)** für jeden Netzbereich. Die Datei wird ausschließlich lokal im Browser verarbeitet – es werden keine Daten hochgeladen.
+Ein oder mehrere 15-Minuten-Lastprofile (CSV, z. B. Smart-Meter-Export des Netzbetreibers) hochladen, und das Tool berechnet sofort die jährlichen Netzkosten **2026 (Ist)** und **2027 (Leistungstarif)** für jeden Netzbereich. Die Datei wird ausschließlich lokal im Browser verarbeitet – es werden keine Daten hochgeladen.
 
 ## Verwendung
 
-`index.html` im Browser öffnen (oder per GitHub Pages bereitstellen) und die CSV-Datei per Drag & Drop ablegen.
+`index.html` im Browser öffnen (oder per GitHub Pages bereitstellen) und die CSV-Datei(en) per Drag & Drop ablegen.
 
 ## Funktionen
 
@@ -20,6 +20,7 @@ Ein 15-Minuten-Lastprofil (CSV, z. B. Smart-Meter-Export des Netzbetreibers) hoc
 
 ## Unterstützte CSV-Formate
 
+- Mehrere Dateien auf einmal (z. B. in Teilzeiträume aufgeteilter Export): werden zusammengeführt, Überlappungen nur einmal gezählt
 - Trennzeichen `;`, `,` oder Tab; Dezimalkomma oder -punkt
 - Datum `TT.MM.JJJJ hh:mm`, `JJJJ-MM-TT hh:mm` (auch ISO mit `T`) oder getrennte Datums-/Zeitspalten
 - Werte in kW oder kWh je Viertelstunde – erkannt über Spaltenname oder eine Spalte `Einheit`

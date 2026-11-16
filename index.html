@@ -75,9 +75,9 @@
 
   <div class="card">
     <div id="dropzone">
-      <div style="font-size:17px;font-weight:600">Lastprofil hier ablegen</div>
-      <div class="muted small" style="margin-top:4px">oder klicken zum Auswählen (CSV, Trennzeichen ; , oder Tab · Werte in kW oder kWh je Viertelstunde)</div>
-      <input type="file" id="fileInput" accept=".csv,.txt" class="hidden">
+      <div style="font-size:17px;font-weight:600">Lastprofil(e) hier ablegen</div>
+      <div class="muted small" style="margin-top:4px">oder klicken zum Auswählen – auch mehrere Dateien auf einmal, z. B. ein in Teilzeiträume aufgeteilter Export (CSV, Trennzeichen ; , oder Tab · Werte in kW oder kWh je Viertelstunde)</div>
+      <input type="file" id="fileInput" accept=".csv,.txt" multiple class="hidden">
     </div>
     <div class="row" style="margin-top:14px">
       <div class="opt" style="min-width:190px"><label>Mein Netzbereich</label><select id="optRegion"></select></div>
@@ -380,7 +380,37 @@ const NetzLogic = (() => {
     return { peaks: an.billingPeaks.map(p => p === null ? null : Math.min(p, cap)), energy, count, maxEvt };
   }
 
-  return { parseNumber, parseDateTime, parseCSV, analyze, costs, shave };
+  // Mehrere Dateien (z. B. aufgeteilter Export) zu einem Lastprofil zusammenführen.
+  // Werte werden je Datei in kW umgerechnet; Überlappungen zwischen Dateien werden einmal gezählt
+  // (doppelte Zeitstempel innerhalb einer Datei – Sommerzeit-Umstellung im Oktober – bleiben erhalten).
+  function mergeParsed(parts) {
+    if (parts.length === 1) return { ...parts[0], files: [{ name: parts[0].name, n: parts[0].points.length, unit: parts[0].unit, from: parts[0].points[0].t, to: parts[0].points[parts[0].points.length - 1].t }], overlaps: 0, mixedInterval: false };
+    const pts = [];
+    parts.forEach((p, fi) => {
+      const h = p.intervalMs / 3600000;
+      p.points.forEach(x => pts.push({ t: x.t, v: p.unit === 'kwh' ? x.v / h : x.v, label: x.label, fi }));
+    });
+    pts.sort((a, b) => a.t - b.t || a.fi - b.fi);
+    const out = []; let overlaps = 0;
+    const seen = new Map();                       // t -> Datei-Index des ersten Vorkommens
+    for (const x of pts) {
+      const f = seen.get(x.t);
+      if (f !== undefined && f !== x.fi) { overlaps++; continue; }
+      if (f === undefined) seen.set(x.t, x.fi);
+      out.push({ t: x.t, v: x.v, label: x.label });
+    }
+    const intervals = [...new Set(parts.map(p => p.intervalMs))];
+    const qualityCounts = {};
+    parts.forEach(p => Object.entries(p.qualityCounts || {}).forEach(([k, v]) => qualityCounts[k] = (qualityCounts[k] || 0) + v));
+    return {
+      points: out, unit: 'kw', intervalMs: Math.min(...intervals), mixedInterval: intervals.length > 1,
+      stamp: [...new Set(parts.map(p => p.stamp))].join('/'), skipped: parts.reduce((s, p) => s + p.skipped, 0), qualityCounts,
+      columns: parts[0].columns, overlaps, sourceUnits: [...new Set(parts.map(p => p.unit))],
+      files: parts.map(p => ({ name: p.name, n: p.points.length, unit: p.unit, from: p.points[0].t, to: p.points[p.points.length - 1].t })),
+    };
+  }
+
+  return { parseNumber, parseDateTime, parseCSV, mergeParsed, analyze, costs, shave };
 })();
 
 /* =====================================================================
@@ -395,7 +425,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const MONTHS = ['Jän','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 
-let D = loadData(), parsed = null, an = null, lastFileText = null, results = [], peakChart = null, regionChart = null;
+let D = loadData(), parsed = null, an = null, lastFiles = [], results = [], peakChart = null, regionChart = null;
 let mine = store.get('netzMine') || 'noe';
 
 function loadData() {
@@ -428,22 +458,24 @@ $('toggleConfig').addEventListener('click', () => $('configSection').classList.t
 const dz = $('dropzone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) readFiles(e.dataTransfer.files); });
 dz.addEventListener('click', () => $('fileInput').click());
-$('fileInput').addEventListener('change', e => { if (e.target.files.length) readFile(e.target.files[0]); });
+$('fileInput').addEventListener('change', e => { if (e.target.files.length) readFiles(e.target.files); e.target.value = ''; });
 
-function readFile(file) {
-  const r = new FileReader();
-  r.onload = e => {
-    if (e.target.result.includes('\uFFFD')) {        // kein UTF-8 → Windows-1252 (Excel-Export)
-      const r2 = new FileReader(); r2.onload = e2 => { lastFileText = e2.target.result; processFile(); }; r2.readAsText(file, 'windows-1252'); return;
-    }
-    lastFileText = e.target.result; processFile();
-  };
-  r.onerror = () => showError('Fehler beim Lesen der Datei.');
-  r.readAsText(file, 'utf-8');
+function readText(file, enc) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = () => rej(new Error(`Fehler beim Lesen von „${file.name}“.`)); r.readAsText(file, enc); });
 }
-['optUnit', 'optStamp'].forEach(id => $(id).addEventListener('change', () => lastFileText && processFile()));
+async function readFiles(fileList) {
+  try {
+    lastFiles = await Promise.all([...fileList].map(async f => {
+      let text = await readText(f, 'utf-8');
+      if (text.includes('�')) text = await readText(f, 'windows-1252');   // kein UTF-8 → Windows-1252 (Excel-Export)
+      return { name: f.name, text };
+    }));
+    processFile();
+  } catch (e) { showError(e.message); }
+}
+['optUnit', 'optStamp'].forEach(id => $(id).addEventListener('change', () => lastFiles.length && processFile()));
 $('optYear').addEventListener('change', () => analyzeYear(+$('optYear').value));
 $('optAnnualize').addEventListener('change', () => an && analyzeYear(an.year));
 $('optGross').addEventListener('change', render);
@@ -452,8 +484,13 @@ function showError(msg) { $('errorMsg').textContent = msg; $('errorMsg').classLi
 
 function processFile() {
   $('errorMsg').classList.add('hidden');
-  try { parsed = NetzLogic.parseCSV(lastFileText, { unit: $('optUnit').value, stamp: $('optStamp').value }); }
-  catch (e) { return showError(e.message); }
+  const opts = { unit: $('optUnit').value, stamp: $('optStamp').value };
+  const parts = [];
+  for (const f of lastFiles) {
+    try { parts.push({ name: f.name, ...NetzLogic.parseCSV(f.text, opts) }); }
+    catch (e) { return showError(lastFiles.length > 1 ? `${f.name}: ${e.message}` : e.message); }
+  }
+  parsed = NetzLogic.mergeParsed(parts);
   const counts = {};
   parsed.points.forEach(p => { const y = new Date(p.t).getUTCFullYear(); counts[y] = (counts[y] || 0) + 1; });
   const years = Object.keys(counts).map(Number).sort();
@@ -479,7 +516,13 @@ function analyzeYear(year) {
   }
   if (parsed.skipped > 0) notes.push(`${parsed.skipped} Zeilen ohne gültigen Zeitstempel/Wert übersprungen.`);
   if (parsed.intervalMs !== 900000) notes.push(`Erkanntes Intervall: ${parsed.intervalMs / 60000} min (erwartet 15 min) – Spitzen sind ggf. unterschätzt.`);
-  const info = `Erkannt: Spalten „${parsed.columns.date}${parsed.columns.time ? ' + ' + parsed.columns.time : ''}“ / „${parsed.columns.value}“, Einheit ${parsed.unit === 'kwh' ? 'kWh je Intervall' : 'kW'}, Zeitstempel = ${parsed.stamp === 'end' ? 'Intervallende' : 'Intervallbeginn'}.`;
+  if (parsed.overlaps > 0) notes.push(`${parsed.overlaps.toLocaleString('de-AT')} Viertelstunden waren in mehreren Dateien enthalten und wurden nur einmal gezählt.`);
+  if (parsed.mixedInterval) notes.push('Die Dateien haben unterschiedliche Intervalllängen – bitte prüfen.');
+  const units = (parsed.sourceUnits || [parsed.unit]).map(u => u === 'kwh' ? 'kWh je Intervall' : 'kW').join(' / ');
+  const stampTxt = parsed.stamp.split('/').map(s => s === 'end' ? 'Intervallende' : 'Intervallbeginn').join(' / ');
+  const fd = t => new Date(t).toLocaleDateString('de-AT', { timeZone: 'UTC' });
+  let info = `Erkannt: Spalten „${parsed.columns.date}${parsed.columns.time ? ' + ' + parsed.columns.time : ''}“ / „${parsed.columns.value}“, Einheit ${units}, Zeitstempel = ${stampTxt}.`;
+  if (parsed.files && parsed.files.length > 1) info += ` ${parsed.files.length} Dateien zusammengeführt: ` + parsed.files.map(f => `${f.name} (${fd(f.from)}–${fd(f.to)}, ${f.n.toLocaleString('de-AT')} Werte)`).join('; ') + '.';
   $('qualityMsg').className = 'notice ' + (notes.length ? 'warn' : 'info');
   $('qualityMsg').innerHTML = `<div>${esc(info)}</div>` + (notes.length ? `<ul>${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '');
 
