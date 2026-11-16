@@ -24,7 +24,7 @@ Oder lokal: `index.html` im Browser öffnen und die CSV-Datei(en) per Drag & Dro
 
 > **Getestet mit dem Export der Vorarlberg-Netz.**
 
-Im Kundenportal unter **Verbräuche** die Ansicht **1/4 Stunden** wählen, den Zeitraum einstellen und auf **Export** klicken. Die heruntergeladene CSV-Datei direkt im Tool ablegen. Lässt sich nicht der ganze Zeitraum auf einmal exportieren, einfach mehrere Teil-Exporte erstellen und gemeinsam hochladen.
+Im [Kundenportal der Vorarlberg-Netz](https://webportal.vorarlbergnetz.at/Consumption) unter **Verbräuche** die Ansicht **1/4 Stunden** wählen, den Zeitraum einstellen und auf **Export** klicken. Die heruntergeladene CSV-Datei direkt im Tool ablegen. Lässt sich nicht der ganze Zeitraum auf einmal exportieren, einfach mehrere Teil-Exporte erstellen und gemeinsam hochladen.
 
 ![Beispiel: Viertelstunden-Export im Kundenportal der Vorarlberg-Netz (anonymisiert)](docs/beispiel-export-vorarlberg-netz.png)
 
