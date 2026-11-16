@@ -6,7 +6,9 @@ Ein oder mehrere 15-Minuten-Lastprofile (CSV, z. B. Smart-Meter-Export des Netzb
 
 ## Verwendung
 
-`index.html` im Browser öffnen (oder per GitHub Pages bereitstellen) und die CSV-Datei(en) per Drag & Drop ablegen.
+**Online:** https://helyxx.github.io/Netzkosten_AT_2027/
+
+Oder lokal: `index.html` im Browser öffnen und die CSV-Datei(en) per Drag & Drop ablegen.
 
 ## Funktionen
 
