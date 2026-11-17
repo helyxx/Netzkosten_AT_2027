@@ -70,6 +70,15 @@
   .shave-out { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 14px; }
   .shave-out div { background: var(--soft); border-radius: 8px; padding: 10px 12px; }
   .shave-out b { display: block; font-size: 18px; margin-top: 2px; }
+  .month-caps { margin-top: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .month-caps[open] { background: var(--soft); }
+  .month-caps summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+  .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+  .month-grid label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .month-grid input { padding: 4px 6px; font-size: 13px; }
+  .month-grid .pk { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .month-grid .pk.cut { color: var(--good); font-weight: 600; }
+  #shaveGlobal.off { opacity: .4; pointer-events: none; }
   .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --bg:#0f172a; --card:#111827; --border:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --soft:#0b1220; --primary:#93c5fd; --accent:#3b82f6; --accent-soft:#172554; --good:#4ade80; --good-soft:#052e16; --warn:#fbbf24; --warn-soft:#291c05; }
@@ -177,10 +186,19 @@
     <div class="card">
       <h3>Was-wäre-wenn: Spitzenkappung (Lastmanagement / Batterie / Wallbox drosseln)</h3>
       <div class="muted small" style="margin-bottom:10px">Begrenzt jede Viertelstunde auf die gewählte Leistung. Die Energie bleibt gleich (wird nur verschoben); es sinkt der Leistungspreis – in allen Netzbereichen.</div>
-      <div class="row">
+      <div class="row" id="shaveGlobal">
         <div style="flex:1;min-width:220px"><input type="range" id="shaveRange" min="2" max="20" step="0.1" value="20"></div>
         <div class="opt" style="width:120px"><label>Grenze (kW)</label><input type="number" id="shaveInput" step="0.1" min="0"></div>
       </div>
+      <details id="shaveMonthly" class="month-caps">
+        <summary>Grenze je Monat festlegen <span class="muted small">– überschreibt die globale Grenze, solange aufgeklappt</span></summary>
+        <div class="muted small" style="margin:8px 0">Leeres Feld = keine Kappung in diesem Monat. Darunter steht die gemessene Monatsspitze.</div>
+        <div class="month-grid" id="monthCapGrid"></div>
+        <div class="row" style="margin-top:10px;gap:8px">
+          <button type="button" class="btn-ghost" id="btnCapsFromGlobal">Alle = globale Grenze</button>
+          <button type="button" class="btn-ghost" id="btnCapsClear">Alle leeren</button>
+        </div>
+      </details>
       <div class="shave-out">
         <div><span class="muted small" id="lblShSave">Einsparung (mein Netzbereich)</span><b id="shSave">–</b></div>
         <div><span class="muted small">Zu verschiebende Energie</span><b id="shEnergy">–</b></div>
@@ -387,16 +405,19 @@ const NetzLogic = (() => {
     return { y26, y27 };
   }
 
+  // cap: eine Grenze für alle Monate (Zahl) oder je Monat (Array mit 12 Werten, Infinity = keine Kappung)
   function shave(an, cap) {
+    const capOf = Array.isArray(cap) ? m => cap[m] : () => cap;
     let energy = 0, count = 0, maxEvt = 0, evt = 0, lastT = null;
     for (const p of an.pts) {
-      if (p.kw > cap) {
-        const e = (p.kw - cap) * an.hours; energy += e; count++;
+      const c = capOf(new Date(p.t).getUTCMonth());
+      if (p.kw > c) {
+        const e = (p.kw - c) * an.hours; energy += e; count++;
         evt = (lastT !== null && p.t - lastT <= an.hours * 3600000) ? evt + e : e;
         maxEvt = Math.max(maxEvt, evt); lastT = p.t;
       }
     }
-    return { peaks: an.billingPeaks.map(p => p === null ? null : Math.min(p, cap)), energy, count, maxEvt };
+    return { peaks: an.billingPeaks.map((p, m) => p === null ? null : Math.min(p, capOf(m))), energy, count, maxEvt };
   }
 
   // Mehrere Dateien (z. B. aufgeteilter Export) zu einem Lastprofil zusammenführen.
@@ -578,10 +599,23 @@ function render() {
   if (!an) return;
   const gross = $('optGross').checked;
   $('lblVat').textContent = gross ? 'brutto' : 'netto';
+  const monthly = $('shaveMonthly').open;
   const capIn = parseFloat($('shaveInput').value);
-  const maxBill = Math.max(...an.billingPeaks.filter(p => p !== null), 0);
-  const capped = isFinite(capIn) && capIn < maxBill;
-  const sh = NetzLogic.shave(an, capped ? capIn : Infinity);
+  let cap, capped;
+  if (monthly) {
+    cap = monthCaps();
+    capped = cap.some((c, m) => an.billingPeaks[m] !== null && c < an.billingPeaks[m]);
+  } else {
+    const maxBill = Math.max(...an.billingPeaks.filter(p => p !== null), 0);
+    capped = isFinite(capIn) && capIn < maxBill;
+    cap = capped ? capIn : Infinity;
+  }
+  const sh = NetzLogic.shave(an, cap);
+  monthCapInputs.forEach((inp, m) => {
+    const pk = inp.parentElement.querySelector('.pk');
+    pk.textContent = an.monthlyCount[m] ? `Spitze ${fK(an.monthlyPeaks[m], 1)}` : 'keine Daten';
+    pk.classList.toggle('cut', monthly && an.monthlyCount[m] > 0 && cap[m] < an.monthlyPeaks[m]);
+  });
 
   results = D.regions.map(r => {
     const c = NetzLogic.costs(an, an.billingPeaks, r, D, gross);
@@ -611,7 +645,7 @@ function render() {
       <td class="num">${fC(x.shaved.sum)}</td></tr>`;
   }).join('');
   $('regionBody').querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => setMine(tr.dataset.id)));
-  $('thShave').innerHTML = capped ? `2027 gekappt<br>auf ${fK(capIn, 1)} kW` : '2027 mit<br>Spitzenkappung';
+  $('thShave').innerHTML = !capped ? '2027 mit<br>Spitzenkappung' : monthly ? '2027 gekappt<br>je Monat' : `2027 gekappt<br>auf ${fK(capIn, 1)} kW`;
 
   // Aufschlüsselung eigener Netzbereich
   $('detailTitle').textContent = `Aufschlüsselung ${me.r.name}`;
@@ -628,8 +662,23 @@ function render() {
 
   $('topBody').innerHTML = an.top.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.label)}</td><td class="num">${fK(p.kw)} kW</td></tr>`).join('');
 
-  renderCharts(capped ? capIn : null);
+  renderCharts(capped ? cap : null);
 }
+
+// Grenze je Monat
+$('monthCapGrid').innerHTML = MONTHS.map((m, i) => `<div><label for="cap${i}">${m}</label><input type="number" id="cap${i}" step="0.1" min="0" placeholder="–"><div class="pk"></div></div>`).join('');
+const monthCapInputs = MONTHS.map((_, i) => $('cap' + i));
+function monthCaps() { return monthCapInputs.map(inp => { const v = parseFloat(inp.value); return isFinite(v) && v >= 0 ? v : Infinity; }); }
+function fillCapsFromGlobal() { const g = parseFloat($('shaveInput').value); monthCapInputs.forEach(inp => inp.value = isFinite(g) ? g : ''); }
+monthCapInputs.forEach(inp => inp.addEventListener('input', render));
+$('shaveMonthly').addEventListener('toggle', () => {
+  const open = $('shaveMonthly').open;
+  if (open && monthCapInputs.every(inp => inp.value === '')) fillCapsFromGlobal();
+  $('shaveGlobal').classList.toggle('off', open);
+  render();
+});
+$('btnCapsFromGlobal').addEventListener('click', () => { fillCapsFromGlobal(); render(); });
+$('btnCapsClear').addEventListener('click', () => { monthCapInputs.forEach(inp => inp.value = ''); render(); });
 
 function renderCharts(cap) {
   const muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
@@ -660,7 +709,8 @@ function renderCharts(cap) {
     { type: 'line', label: `Staffelgrenze ${fK(D.limit, 0)} kW`, data: MONTHS.map(() => D.limit), borderColor: '#f59e0b', borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5, order: 1 },
     { type: 'line', label: `Mindestleistung ${fK(D.minKw, 0)} kW`, data: MONTHS.map(() => D.minKw), borderColor: '#94a3b8', borderDash: [2, 3], pointRadius: 0, borderWidth: 1.5, order: 2 },
   ];
-  if (cap !== null) sets.push({ type: 'line', label: `Kappung ${fK(cap, 1)} kW`, data: MONTHS.map(() => cap), borderColor: '#16a34a', pointRadius: 0, borderWidth: 2, order: 0 });
+  if (Array.isArray(cap)) sets.push({ type: 'line', label: 'Kappung je Monat', data: cap.map(c => isFinite(c) ? c : null), borderColor: '#16a34a', backgroundColor: '#16a34a', pointRadius: 4, pointStyle: 'line', borderWidth: 2, stepped: 'middle', spanGaps: false, order: 0 });
+  else if (cap !== null) sets.push({ type: 'line', label: `Kappung ${fK(cap, 1)} kW`, data: MONTHS.map(() => cap), borderColor: '#16a34a', pointRadius: 0, borderWidth: 2, order: 0 });
   if (peakChart) peakChart.destroy();
   peakChart = new Chart($('peakChart'), {
     data: { labels: MONTHS, datasets: sets },
@@ -688,8 +738,9 @@ $('btnExport').addEventListener('click', () => {
   const L = [`Netzkosten ${an.year} (${$('optGross').checked ? 'brutto' : 'netto'}) – Verbrauch ${f0(an.billingKwh)} kWh`, '',
              'Netzbereich;2026 Ist;2027 Leistungstarif;Differenz;Differenz %;2027 gekappt'];
   results.forEach(x => { const d = x.y27.sum - x.y26.sum; L.push([x.r.name, n(x.y26.sum), n(x.y27.sum), n(d), n(d / x.y26.sum * 100), n(x.shaved.sum)].join(';')); });
-  L.push('', 'Monat;Spitze kW;Zeitpunkt;Verbrauch kWh');
-  MONTHS.forEach((m, i) => L.push([m, an.monthlyPeaks[i].toFixed(3).replace('.', ','), an.monthlyPeakTimes[i], n(an.monthlyKwh[i])].join(';')));
+  const caps = $('shaveMonthly').open ? monthCaps() : MONTHS.map(() => parseFloat($('shaveInput').value));
+  L.push('', 'Monat;Spitze kW;Zeitpunkt;Verbrauch kWh;Kappung kW');
+  MONTHS.forEach((m, i) => L.push([m, an.monthlyPeaks[i].toFixed(3).replace('.', ','), an.monthlyPeakTimes[i], n(an.monthlyKwh[i]), isFinite(caps[i]) && caps[i] < an.monthlyPeaks[i] ? n(caps[i]) : ''].join(';')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF' + L.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   a.download = `netzkosten_oesterreich_${an.year}.csv`; a.click();

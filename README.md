@@ -24,7 +24,7 @@ Die Beispiel-Schaltflächen funktionieren nur in der Online-Version (oder über 
 - Vergleich 2026 ↔ 2027 für alle Netzbereiche, inkl. Differenz in € und %
 - Detail-Aufschlüsselung für den eigenen Netzbereich (Pauschale/Leistungspreis, Arbeitspreis, Netzverlust, Messentgelt)
 - Monatliche Leistungsspitzen mit Staffelgrenze (10 kW) und Mindestleistung (2 kW)
-- Was-wäre-wenn: Spitzenkappung (Lastmanagement, Batterie, Wallbox drosseln)
+- Was-wäre-wenn: Spitzenkappung (Lastmanagement, Batterie, Wallbox drosseln) – eine Grenze fürs ganze Jahr oder aufklappbar je Monat (z. B. im Winter strenger als im Sommer)
 - Top-10-Viertelstunden, CSV-Export, brutto/netto-Umschaltung
 - Hochrechnung bei unvollständigen Daten
 - Alle Tarife im Tool editierbar (werden im Browser gespeichert)
