@@ -84,6 +84,7 @@
   .flex-info p { margin: 0 0 12px; }
   .flex-info ul { margin: 0 0 12px; padding-left: 18px; }
   .flexcol { background: var(--accent-soft); }
+  .site-footer a { color: var(--accent); }
   .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --bg:#0f172a; --card:#111827; --border:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --soft:#0b1220; --primary:#93c5fd; --accent:#3b82f6; --accent-soft:#172554; --good:#4ade80; --good-soft:#052e16; --warn:#fbbf24; --warn-soft:#291c05; }
@@ -291,6 +292,11 @@
     </div>
 
   </div>
+
+  <footer class="card small center site-footer">
+    <div>Änderungsvorschläge, Korrekturen, Feature-Wünsche etc. bitte als <a href="https://github.com/helyxx/Netzkosten_AT_2027/issues" target="_blank" rel="noopener">Issue auf GitHub</a>.</div>
+    <div class="muted" style="margin-top:4px">Getestet mit den Exporten der Vorarlberg-Netz und der Netz Niederösterreich · <a href="https://github.com/helyxx/Netzkosten_AT_2027" target="_blank" rel="noopener">Quellcode auf GitHub</a> · Alle Angaben ohne Gewähr.</div>
+  </footer>
 </div>
 
 <script>

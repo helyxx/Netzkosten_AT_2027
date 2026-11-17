@@ -32,7 +32,7 @@ Die Beispiel-Schaltflächen funktionieren nur in der Online-Version (oder über 
 
 ## Beispiel: Export aus dem Kundenportal
 
-> **Getestet mit dem Export der Vorarlberg-Netz.**
+> **Getestet mit den Exporten der Vorarlberg-Netz und der Netz Niederösterreich.**
 
 Im [Kundenportal der Vorarlberg-Netz](https://webportal.vorarlbergnetz.at/Consumption) unter **Verbräuche** die Ansicht **1/4 Stunden** wählen, den Zeitraum einstellen und auf **Export** klicken. Die heruntergeladene CSV-Datei direkt im Tool ablegen. Lässt sich nicht der ganze Zeitraum auf einmal exportieren, einfach mehrere Teil-Exporte erstellen und gemeinsam hochladen.
 
@@ -67,3 +67,7 @@ Im [Kundenportal der Vorarlberg-Netz](https://webportal.vorarlbergnetz.at/Consum
 - Hintergrund: [help.ORF.at – Stromnetztarife](https://help.orf.at/stories/3237714/)
 
 Alle Angaben ohne Gewähr.
+
+## Kontakt
+
+Änderungsvorschläge, Korrekturen, Feature-Wünsche etc. bitte als [Issue hier auf GitHub](https://github.com/helyxx/Netzkosten_AT_2027/issues).
