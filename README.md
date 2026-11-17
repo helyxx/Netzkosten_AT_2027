@@ -10,6 +10,15 @@ Ein oder mehrere 15-Minuten-Lastprofile (CSV, z. B. Smart-Meter-Export des Netzb
 
 Oder lokal: `index.html` im Browser öffnen und die CSV-Datei(en) per Drag & Drop ablegen.
 
+**Zum Ausprobieren ohne eigene Daten:** Neben dem Uploadfeld lassen sich zwei Beispielprofile mit einem Klick laden. Es sind anonymisierte Ganzjahresprofile 2025 im Exportformat der Netzbetreiber (Ordner [`beispiele/`](beispiele/)):
+
+| Beispiel | Datei | Jahresverbrauch | Spitze (15 min) |
+|---|---|---:|---:|
+| Haushalt mit PV | [`haushalt-mit-pv.csv`](beispiele/haushalt-mit-pv.csv) | ca. 5.800 kWh Netzbezug | 11,7 kW |
+| Haushalt ohne PV, mit E-Auto | [`haushalt-ohne-pv-mit-e-auto.csv`](beispiele/haushalt-ohne-pv-mit-e-auto.csv) | ca. 12.000 kWh | 15,1 kW |
+
+Die Beispiel-Schaltflächen funktionieren nur in der Online-Version (oder über einen lokalen Webserver). Wird `index.html` direkt als Datei geöffnet, blockiert der Browser das Nachladen. Dann die Datei aus `beispiele/` einfach ins Uploadfeld ziehen.
+
 ## Funktionen
 
 - Vergleich 2026 ↔ 2027 für alle Netzbereiche, inkl. Differenz in € und %

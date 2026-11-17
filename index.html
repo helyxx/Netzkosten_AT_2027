@@ -21,6 +21,17 @@
   .hidden { display: none !important; }
   #dropzone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 36px 16px; text-align: center; cursor: pointer; transition: background .15s; }
   #dropzone:hover, #dropzone.dragover { background: var(--soft); border-color: var(--accent); }
+  .upload-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 14px; align-items: stretch; }
+  .upload-grid #dropzone { display: flex; flex-direction: column; justify-content: center; }
+  @media (max-width: 720px) { .upload-grid { grid-template-columns: 1fr; } }
+  .examples { border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: var(--soft); display: flex; flex-direction: column; gap: 8px; }
+  .examples .ttl { font-size: 14px; font-weight: 600; }
+  .ex-btn { text-align: left; background: var(--card); border: 1px solid #cbd5e1; padding: 8px 10px; color: var(--text); }
+  .ex-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .ex-btn.active { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .ex-btn b { display: block; font-size: 14px; }
+  .ex-btn span { font-size: 12px; color: var(--muted); }
+  .ex-btn:disabled { opacity: .6; cursor: wait; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
   .opt label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
   select, input[type=number] { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; font-size: 14px; background: var(--card); color: var(--text); width: 100%; }
@@ -74,10 +85,18 @@
   </div>
 
   <div class="card">
-    <div id="dropzone">
-      <div style="font-size:17px;font-weight:600">Lastprofil(e) hier ablegen</div>
-      <div class="muted small" style="margin-top:4px">oder klicken zum Auswählen – auch mehrere Dateien auf einmal, z. B. ein in Teilzeiträume aufgeteilter Export (CSV, Trennzeichen ; , oder Tab · Werte in kW oder kWh je Viertelstunde)</div>
-      <input type="file" id="fileInput" accept=".csv,.txt" multiple class="hidden">
+    <div class="upload-grid">
+      <div id="dropzone">
+        <div style="font-size:17px;font-weight:600">Lastprofil(e) hier ablegen</div>
+        <div class="muted small" style="margin-top:4px">oder klicken zum Auswählen – auch mehrere Dateien auf einmal, z. B. ein in Teilzeiträume aufgeteilter Export (CSV, Trennzeichen ; , oder Tab · Werte in kW oder kWh je Viertelstunde)</div>
+        <input type="file" id="fileInput" accept=".csv,.txt" multiple class="hidden">
+      </div>
+      <div class="examples">
+        <div class="ttl">Noch keine Datei? Beispiel ausprobieren</div>
+        <button type="button" class="ex-btn" data-file="beispiele/haushalt-mit-pv.csv"><b>Haushalt mit PV</b><span>2025 · ca. 5.800 kWh Netzbezug · Spitze 11,7 kW</span></button>
+        <button type="button" class="ex-btn" data-file="beispiele/haushalt-ohne-pv-mit-e-auto.csv"><b>Haushalt ohne PV, mit E-Auto</b><span>2025 · ca. 12.000 kWh · Spitze 15,1 kW</span></button>
+        <div class="muted small">Anonymisierte Ganzjahresprofile im Exportformat der Netzbetreiber.</div>
+      </div>
     </div>
     <div class="row" style="margin-top:14px">
       <div class="opt" style="min-width:190px"><label>Mein Netzbereich</label><select id="optRegion"></select></div>
@@ -472,9 +491,31 @@ async function readFiles(fileList) {
       if (text.includes('�')) text = await readText(f, 'windows-1252');   // kein UTF-8 → Windows-1252 (Excel-Export)
       return { name: f.name, text };
     }));
+    markExample(null);
     processFile();
   } catch (e) { showError(e.message); }
 }
+
+// Beispielprofile (liegen im Ordner beispiele/ neben dieser Seite)
+const exBtns = [...document.querySelectorAll('.ex-btn')];
+function markExample(btn) { exBtns.forEach(b => b.classList.toggle('active', b === btn)); }
+exBtns.forEach(btn => btn.addEventListener('click', async () => {
+  const file = btn.dataset.file;
+  exBtns.forEach(b => b.disabled = true);
+  try {
+    const r = await fetch(file);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const buf = await r.arrayBuffer();
+    let text = new TextDecoder('utf-8').decode(buf);
+    if (text.includes('�')) text = new TextDecoder('windows-1252').decode(buf);
+    lastFiles = [{ name: file.split('/').pop(), text }];
+    markExample(btn);
+    processFile();
+  } catch (e) {
+    showError(`Beispiel „${btn.querySelector('b').textContent}“ konnte nicht geladen werden (${e.message}). ` +
+      (location.protocol === 'file:' ? 'Lokal geöffnet blockiert der Browser das Nachladen – bitte die Online-Version verwenden oder die Datei aus dem Ordner beispiele/ hochladen.' : ''));
+  } finally { exBtns.forEach(b => b.disabled = false); }
+}));
 ['optUnit', 'optStamp'].forEach(id => $(id).addEventListener('change', () => lastFiles.length && processFile()));
 $('optYear').addEventListener('change', () => analyzeYear(+$('optYear').value));
 $('optAnnualize').addEventListener('change', () => an && analyzeYear(an.year));
