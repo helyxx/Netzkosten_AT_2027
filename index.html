@@ -79,6 +79,11 @@
   .month-grid .pk { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .month-grid .pk.cut { color: var(--good); font-weight: 600; }
   #shaveGlobal.off { opacity: .4; pointer-events: none; }
+  .flex-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; line-height: 1.55; }
+  .flex-info h4 { margin: 0 0 4px; font-size: 14px; color: var(--primary); }
+  .flex-info p { margin: 0 0 12px; }
+  .flex-info ul { margin: 0 0 12px; padding-left: 18px; }
+  .flexcol { background: var(--accent-soft); }
   .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) { --bg:#0f172a; --card:#111827; --border:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --soft:#0b1220; --primary:#93c5fd; --accent:#3b82f6; --accent-soft:#172554; --good:#4ade80; --good-soft:#052e16; --warn:#fbbf24; --warn-soft:#291c05; }
@@ -160,6 +165,7 @@
             <th class="num">2027<br>Leistungstarif</th>
             <th class="num">Δ 2027 zu 2026</th>
             <th class="num" id="thShave">2027 mit<br>Spitzenkappung</th>
+            <th class="num flexcol hidden">2027<br>flexibel</th>
           </tr></thead>
           <tbody id="regionBody"></tbody>
         </table>
@@ -207,6 +213,33 @@
       </div>
     </div>
 
+    <div class="card" id="flexCard">
+      <h3>Was-wäre-wenn: Flexible Entnahme (Flex-Tarif, Entwurf 2027)</h3>
+      <div class="muted small" style="margin-bottom:10px">Ein Teil der Leistung wird als <b>flexibel</b> vereinbart: rund 75 % billiger, dafür darf der Netzbetreiber ihn zweimal täglich je 2 Stunden sperren. Wie das genau funktioniert, steht <a href="#flexInfo" class="link">unten in der Erklärung</a>.</div>
+      <label class="chk" style="margin-bottom:10px"><input type="checkbox" id="flexOn"> Flexible Entnahme durchrechnen</label>
+      <div id="flexOpts" class="hidden">
+        <div class="row">
+          <div class="opt" style="width:150px"><label>Fixe Leistungszone (kW)</label><input type="number" id="flexFirm" step="0.5" min="0" value="4"></div>
+          <div class="opt" style="width:150px"><label>Sperrfenster 1</label><select id="flexW1"></select></div>
+          <div class="opt" style="width:150px"><label>Sperrfenster 2</label><select id="flexW2"></select></div>
+          <div class="opt" style="min-width:260px;flex:1"><label>Verhalten in den Sperrfenstern</label>
+            <select id="flexMode">
+              <option value="throttle">Geräte werden auf die fixe Zone gedrosselt (keine Strafe)</option>
+              <option value="measured">Lastprofil wie gemessen – Überschreitung kostet Strafe</option>
+            </select></div>
+          <div class="opt" style="width:200px" id="flexPenWrap"><label>Strafe verrechnet</label>
+            <select id="flexPen"><option value="window">je Sperrfenster (höchster Wert)</option><option value="month">je Monat (höchster Wert)</option></select></div>
+        </div>
+        <div id="flexRuleMsg" class="notice warn hidden"></div>
+        <div class="shave-out">
+          <div><span class="muted small" id="lblFxSave">Ersparnis ggü. 2027 normal</span><b id="fxSave">–</b></div>
+          <div><span class="muted small">Leistungspreis normal → flexibel</span><b id="fxLp">–</b></div>
+          <div><span class="muted small" id="lblFxImpact">Strafe</span><b id="fxImpact">–</b></div>
+          <div><span class="muted small">Sperrfenster mit Überschreitung</span><b id="fxEvents">–</b></div>
+        </div>
+      </div>
+    </div>
+
     <div class="two">
       <div class="card">
         <h3>Höchste 10 Viertelstunden</h3>
@@ -218,10 +251,43 @@
           <li><b>2026:</b> Arbeitspreis × kWh + Netzverlust × kWh + Pauschale 54 €/Jahr + Messentgelt (SNE-V 2018 i.d.F. 2026).</li>
           <li><b>2027 Leistungstarif:</b> je Kalendermonat die höchste Viertelstunde (min. 2 kW); bis 10 kW zum Grundsatz, der Teil darüber zum höheren Satz (rund 1,5×). Dazu Arbeitspreis × kWh und Netzverlust × kWh. Pauschale und Messentgelt entfallen.</li>
           <li><b>Werte 2027 sind ein Entwurf</b> (Begutachtungsentwurf SNE-T-V 2027 der E-Control vom 29.10.2026) und noch nicht verbindlich. Netzverlust 2027 ist darin nicht veröffentlicht – hier wird der Wert von 2026 angenommen.</li>
-          <li>Nicht berücksichtigt: SNAP/WiNAP-Rabatte, flexible Leistung (−75 %), Energiegemeinschaften, Abgaben und Energiepreis.</li>
+          <li><b>Flexible Entnahme:</b> optional im Bereich „Flexible Entnahme“ (Erklärung unten).</li>
+          <li>Nicht berücksichtigt: SNAP/WiNAP-Rabatte, Energiegemeinschaften, Abgaben und Energiepreis.</li>
           <li>Umstellung für Haushalte frühestens 1.12.2027, spätestens 1.7.2028 – bis dahin gilt eine Übergangspauschale.</li>
         </ul>
       </div>
+    </div>
+
+    <div class="card small" id="flexInfo">
+      <h3>Der flexible Tarif (flexible Entnahme) – so funktioniert er</h3>
+      <div class="flex-info">
+        <div>
+          <h4>Grundidee</h4>
+          <p>Du teilst deine Anschlussleistung beim Netzbetreiber in zwei Zonen: eine <b>fixe Leistungszone</b>, die immer zur Verfügung steht, und eine <b>flexible Zone</b> darüber. Für die flexible Zone zahlst du nur rund <b>25 % des Leistungspreises</b> (−75 %). Dafür darf der Netzbetreiber sie zu festgelegten Zeiten sperren. Die flexible Entnahme ersetzt die bisherigen unterbrechbaren Tarife (Nachtstrom, Wärmepumpen-Tarif).</p>
+          <h4>Rechnung je Monat</h4>
+          <p>Monatsspitze bis zur fixen Zone × normaler Leistungspreis (bis 10 kW Grundsatz, darüber 1,5-fach) <br>+ Monatsspitze über der fixen Zone × Flex-Preis <br>+ Arbeitspreis und Netzverlust wie beim normalen Tarif.</p>
+          <p><b>Beispiel Niederösterreich</b>, Monatsspitze 11 kW (Wallbox), fix 4 kW, netto:<br>
+            normal: 10 × 2,61 € + 1 × 3,92 € = <b>30,02 €</b><br>
+            flexibel: 4 × 2,61 € + 7 × 0,65 € = <b>15,01 €</b></p>
+        </div>
+        <div>
+          <h4>Regeln (Stand Entwurf)</h4>
+          <ul>
+            <li><b>Sperrzeiten:</b> zweimal täglich je 2 Stunden. Die Zeitfenster legt der Netzbetreiber fest und darf sie höchstens zweimal im Jahr verlegen.</li>
+            <li><b>Strafe:</b> Liegt der Bezug im Sperrfenster über der fixen Zone, wird für diese Überschreitung zusätzlich der <b>zehnfache Leistungspreis</b> verrechnet (§ 10 Abs. 3). Kann der Netzbetreiber selbst drosseln (z. B. Wallbox oder Wärmepumpe steuerbar), entfällt sie.</li>
+            <li><b>Mindestgrößen:</b> Der flexible Teil muss mindestens 4 kW groß sein; mindestens 4 kW bleiben immer fix, außer die ganze Leistung wird flexibel vereinbart.</li>
+            <li>Verträge laufen grundsätzlich 10 Jahre. Der Netzbetreiber muss sie auf Wunsch abschließen, ab 1.10.2027.</li>
+            <li>Geeignet vor allem für steuerbare Verbraucher: Wallbox, Wärmepumpe, Batteriespeicher.</li>
+          </ul>
+          <h4>Annahmen in diesem Rechner</h4>
+          <ul>
+            <li>Die fixe Zone wird mit der gemessenen Monatsspitze verrechnet, der Rest zum Flex-Preis. Die Mindestleistung 2 kW gilt für die ganze Spitze.</li>
+            <li>Die Lage der Sperrfenster ist frei wählbar – die echten Zeiten legt der Netzbetreiber fest.</li>
+            <li>Ob die Strafe je Sperrfenster oder je Monat anfällt, ist im Entwurf nicht eindeutig; beides lässt sich wählen. Als Basis gilt der Leistungspreis bis 10 kW.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:10px">Quellen: E-Control, Begutachtungsentwurf SNE-T-V 2027 vom 29.10.2026, § 10 (Flex-Preise, Strafe); stromliste.at und help.ORF.at (Sperrzeiten, 4-kW-Regeln, Vertragsdauer). Alles noch nicht verbindlich.</div>
     </div>
 
   </div>
@@ -255,7 +321,12 @@ const DEFAULT_DATA = {
     { id: 'wien', name: 'Wien',                ap26: 6.98,  nv26: 0.70, me26: 2.18, lp1: 2.46, lp2: 3.69, ap27: 5.58,  nv27: 0.70, vat: 20 },
   ],
 };
-const CFG_COLS = [['ap26','AP 2026<br>ct/kWh',0.01],['nv26','NV 2026<br>ct/kWh',0.01],['me26','Mess 2026<br>€/Mon',0.01],['lp1','LP ≤ Grenze<br>€/kW·Mon',0.01],['lp2','LP > Grenze<br>€/kW·Mon',0.01],['ap27','AP 2027<br>ct/kWh',0.01],['nv27','NV 2027<br>ct/kWh',0.01],['vat','USt<br>%',1]];
+// Verringerter Leistungspreis für flexible Entnahme, Netzebene 7, €/kW·Monat netto
+// (E-Control-Begutachtungsentwurf SNE-T-V 2027, § 10 Abs. 1 lit. a – rund 25 % des Leistungspreises bis 10 kW)
+const LP_FLEX = { bgld: 0.85, ktn: 0.8775, kla: 0.625, noe: 0.6525, ooe: 0.6025, linz: 0.6425, sbg: 0.525, stmk: 0.8025,
+                  graz: 0.57, tir: 0.6125, ibk: 0.815, vbg: 0.50, kwt: 1.4575, wien: 0.615 };
+DEFAULT_DATA.regions.forEach(r => r.lpF = LP_FLEX[r.id]);
+const CFG_COLS = [['ap26','AP 2026<br>ct/kWh',0.01],['nv26','NV 2026<br>ct/kWh',0.01],['me26','Mess 2026<br>€/Mon',0.01],['lp1','LP ≤ Grenze<br>€/kW·Mon',0.01],['lp2','LP > Grenze<br>€/kW·Mon',0.01],['lpF','LP flexibel<br>€/kW·Mon',0.0001],['ap27','AP 2027<br>ct/kWh',0.01],['nv27','NV 2027<br>ct/kWh',0.01],['vat','USt<br>%',1]];
 
 /* =====================================================================
    2) REINE BERECHNUNGSLOGIK (ohne DOM)
@@ -405,6 +476,56 @@ const NetzLogic = (() => {
     return { y26, y27 };
   }
 
+  // Flexible Entnahme: Lastprofil gegen fixe Leistungszone und Sperrfenster prüfen.
+  // o = { firm: kW, windows: [[vonStunde, bisStunde], …], throttle: true = Last in Sperrfenstern auf fixe Zone begrenzt }
+  function flex(an, o) {
+    const inWin = t => { const d = new Date(t), h = d.getUTCHours() + d.getUTCMinutes() / 60; return o.windows.findIndex(([a, b]) => h >= a && h < b); };
+    const peaks = Array(12).fill(0), winMax = new Map(), monthPen = Array(12).fill(0);
+    let shiftedKwh = 0, maxExceed = 0;
+    for (const p of an.pts) {
+      if (p.kw < 0) continue;
+      const m = new Date(p.t).getUTCMonth(), w = inWin(p.t);
+      let kw = p.kw;
+      if (w >= 0 && kw > o.firm) {
+        const ex = kw - o.firm;
+        maxExceed = Math.max(maxExceed, ex);
+        if (o.throttle) { shiftedKwh += ex * an.hours; kw = o.firm; }
+        else {
+          const key = Math.floor(p.t / 86400000) + '/' + w;          // je Tag und Sperrfenster
+          winMax.set(key, Math.max(winMax.get(key) || 0, ex));
+          monthPen[m] = Math.max(monthPen[m], ex);
+        }
+      }
+      if (kw > peaks[m]) peaks[m] = kw;
+    }
+    // Abrechnungsmonate wie in analyze(): Monate ohne Daten bleiben leer bzw. werden bei Hochrechnung gemittelt
+    const have = peaks.filter((_, m) => an.monthlyCount[m]);
+    const avg = have.reduce((a, b) => a + b, 0) / (have.length || 1);
+    const billPeaks = an.billingPeaks.map((bp, m) => bp === null ? null : an.monthlyCount[m] ? peaks[m] : avg);
+    const scale = an.totalKwh > 0 ? an.billingKwh / an.totalKwh : 1;   // Hochrechnung auch für die Strafe
+    const penWin = [...winMax.values()].reduce((a, b) => a + b, 0) * scale;
+    const penMonth = monthPen.reduce((a, b) => a + b, 0) * scale;
+    return { peaks: billPeaks, events: winMax.size, maxExceed, shiftedKwh, penKwWindow: penWin, penKwMonth: penMonth };
+  }
+
+  // Netzkosten 2027 mit flexibler Entnahme: bis zur fixen Zone normaler (gestaffelter) Leistungspreis, darüber Flex-Preis,
+  // dazu die Strafe (zehnfacher Leistungspreis bis 10 kW) für Überschreitungen der fixen Zone in Sperrfenstern
+  function costsFlex(an, fx, firm, penKw, r, D, gross) {
+    const f = gross ? 1 + r.vat / 100 : 1;
+    const kwh = an.billingKwh;
+    let fest = 0, flexi = 0;
+    for (const p of fx.peaks) {
+      if (p === null) continue;
+      const k = Math.max(p, D.minKw), a = Math.min(k, firm), b = Math.max(0, k - firm);
+      fest += Math.min(a, D.limit) * r.lp1 + Math.max(0, a - D.limit) * r.lp2;
+      flexi += b * r.lpF;
+    }
+    const o = { grund: fest + flexi, fest, flexi, strafe: 10 * r.lp1 * penKw, arbeit: kwh * r.ap27 / 100, verlust: kwh * r.nv27 / 100, mess: 0 };
+    for (const k in o) o[k] *= f;
+    o.sum = o.grund + o.strafe + o.arbeit + o.verlust + o.mess;
+    return o;
+  }
+
   // cap: eine Grenze für alle Monate (Zahl) oder je Monat (Array mit 12 Werten, Infinity = keine Kappung)
   function shave(an, cap) {
     const capOf = Array.isArray(cap) ? m => cap[m] : () => cap;
@@ -450,7 +571,7 @@ const NetzLogic = (() => {
     };
   }
 
-  return { parseNumber, parseDateTime, parseCSV, mergeParsed, analyze, costs, shave };
+  return { parseNumber, parseDateTime, parseCSV, mergeParsed, analyze, costs, shave, flex, costsFlex };
 })();
 
 /* =====================================================================
@@ -617,10 +738,13 @@ function render() {
     pk.classList.toggle('cut', monthly && an.monthlyCount[m] > 0 && cap[m] < an.monthlyPeaks[m]);
   });
 
+  const fo = flexOptions(), fx = fo ? NetzLogic.flex(an, fo) : null;
+  const penKw = fx ? (fo.throttle ? 0 : fo.perMonth ? fx.penKwMonth : fx.penKwWindow) : 0;
   results = D.regions.map(r => {
     const c = NetzLogic.costs(an, an.billingPeaks, r, D, gross);
     const cs = NetzLogic.costs(an, sh.peaks, r, D, gross).y27;
-    return { r, ...c, shaved: cs };
+    const cf = fx ? NetzLogic.costsFlex(an, fx, fo.firm, penKw, r, D, gross) : null;
+    return { r, ...c, shaved: cs, flex: cf };
   });
   const me = results.find(x => x.r.id === mine) || results[0];
 
@@ -642,7 +766,7 @@ function render() {
     return `<tr data-id="${x.r.id}" class="${x.r.id === mine ? 'mine' : ''}">
       <td>${esc(x.r.name)}</td><td class="num">${fC(x.y26.sum)}</td><td class="num">${fC(x.y27.sum)}</td>
       <td class="num ${d > 0 ? 'pos' : 'neg'}">${sign(d)}${fC(d)} (${sign(d)}${fK(d / x.y26.sum * 100, 1)} %)</td>
-      <td class="num">${fC(x.shaved.sum)}</td></tr>`;
+      <td class="num">${fC(x.shaved.sum)}</td>${x.flex ? `<td class="num flexcol">${fC(x.flex.sum)}</td>` : ''}</tr>`;
   }).join('');
   $('regionBody').querySelectorAll('tr').forEach(tr => tr.addEventListener('click', () => setMine(tr.dataset.id)));
   $('thShave').innerHTML = !capped ? '2027 mit<br>Spitzenkappung' : monthly ? '2027 gekappt<br>je Monat' : `2027 gekappt<br>auf ${fK(capIn, 1)} kW`;
@@ -660,10 +784,48 @@ function render() {
   $('shCount').textContent = `${sh.count.toLocaleString('de-AT')} × 15 min`;
   $('shMaxEvt').textContent = `${fK(sh.maxEvt, 2)} kWh`;
 
+  // Flexible Entnahme
+  document.querySelectorAll('th.flexcol').forEach(th => th.classList.toggle('hidden', !fx));
+  if (fx) {
+    const mf = me.flex;
+    $('lblFxSave').textContent = `Ersparnis ${me.r.name} ggü. 2027 normal`;
+    const sv = me.y27.sum - mf.sum;
+    $('fxSave').innerHTML = `<span style="color:${sv >= 0 ? 'var(--good)' : 'var(--danger)'}">${sign(sv)}${fC(sv)} €/Jahr</span>`;
+    $('fxLp').textContent = `${fC(me.y27.grund)} → ${fC(mf.grund)} €`;
+    if (fo.throttle) { $('lblFxImpact').textContent = 'Zu verschiebende Energie (Sperrfenster)'; $('fxImpact').textContent = `${fK(fx.shiftedKwh, 1)} kWh/Jahr`; }
+    else { $('lblFxImpact').textContent = 'Strafe für Überschreitungen'; $('fxImpact').textContent = `${fC(mf.strafe)} €/Jahr`; }
+    $('fxEvents').textContent = fx.events || fx.shiftedKwh > 0 || fx.maxExceed > 0
+      ? `${fo.throttle ? 'gedrosselt' : fx.events.toLocaleString('de-AT') + ' ×'} · max. ${fK(fx.maxExceed, 1)} kW über fix` : 'keine';
+    const maxPk = Math.max(...an.monthlyPeaks);
+    const rules = [];
+    if (fo.firm > 0 && fo.firm < 4) rules.push('Die fixe Zone muss mindestens 4 kW betragen (oder 0 kW, wenn die ganze Leistung flexibel ist).');
+    if (maxPk - fo.firm < 4) rules.push(`Der flexible Teil muss mindestens 4 kW groß sein – bei einer Jahresspitze von ${fK(maxPk, 1)} kW wäre er hier nur ${fK(Math.max(0, maxPk - fo.firm), 1)} kW. Die Vereinbarung bezieht sich auf die Anschlussleistung; mit einer größeren flexiblen Zone ändert sich an der Rechnung nichts.`);
+    $('flexRuleMsg').innerHTML = rules.map(esc).join('<br>');
+    $('flexRuleMsg').classList.toggle('hidden', !rules.length);
+  }
+
   $('topBody').innerHTML = an.top.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.label)}</td><td class="num">${fK(p.kw)} kW</td></tr>`).join('');
 
   renderCharts(capped ? cap : null);
 }
+
+// Flexible Entnahme
+const hh = h => String(h).padStart(2, '0') + ':00';
+['flexW1', 'flexW2'].forEach((id, k) => {
+  $(id).innerHTML = Array.from({ length: 23 }, (_, h) => `<option value="${h}" ${h === [7, 17][k] ? 'selected' : ''}>${hh(h)}–${hh(h + 2)}</option>`).join('');
+});
+function flexOptions() {
+  if (!$('flexOn').checked) return null;
+  const a = +$('flexW1').value, b = +$('flexW2').value;
+  return { firm: Math.max(0, parseFloat($('flexFirm').value) || 0), windows: [[a, a + 2], [b, b + 2]],
+           throttle: $('flexMode').value === 'throttle', perMonth: $('flexPen').value === 'month' };
+}
+['flexOn', 'flexFirm', 'flexW1', 'flexW2', 'flexMode', 'flexPen'].forEach(id => $(id).addEventListener(id === 'flexFirm' ? 'input' : 'change', () => {
+  $('flexOpts').classList.toggle('hidden', !$('flexOn').checked);
+  $('flexPenWrap').classList.toggle('hidden', $('flexMode').value === 'throttle');
+  render();
+}));
+$('flexPenWrap').classList.add('hidden');
 
 // Grenze je Monat
 $('monthCapGrid').innerHTML = MONTHS.map((m, i) => `<div><label for="cap${i}">${m}</label><input type="number" id="cap${i}" step="0.1" min="0" placeholder="–"><div class="pk"></div></div>`).join('');
@@ -736,8 +898,8 @@ $('btnExport').addEventListener('click', () => {
   if (!results.length) return;
   const n = v => v.toFixed(2).replace('.', ',');
   const L = [`Netzkosten ${an.year} (${$('optGross').checked ? 'brutto' : 'netto'}) – Verbrauch ${f0(an.billingKwh)} kWh`, '',
-             'Netzbereich;2026 Ist;2027 Leistungstarif;Differenz;Differenz %;2027 gekappt'];
-  results.forEach(x => { const d = x.y27.sum - x.y26.sum; L.push([x.r.name, n(x.y26.sum), n(x.y27.sum), n(d), n(d / x.y26.sum * 100), n(x.shaved.sum)].join(';')); });
+             'Netzbereich;2026 Ist;2027 Leistungstarif;Differenz;Differenz %;2027 gekappt' + (results[0].flex ? ';2027 flexibel' : '')];
+  results.forEach(x => { const d = x.y27.sum - x.y26.sum; L.push([x.r.name, n(x.y26.sum), n(x.y27.sum), n(d), n(d / x.y26.sum * 100), n(x.shaved.sum), ...(x.flex ? [n(x.flex.sum)] : [])].join(';')); });
   const caps = $('shaveMonthly').open ? monthCaps() : MONTHS.map(() => parseFloat($('shaveInput').value));
   L.push('', 'Monat;Spitze kW;Zeitpunkt;Verbrauch kWh;Kappung kW');
   MONTHS.forEach((m, i) => L.push([m, an.monthlyPeaks[i].toFixed(3).replace('.', ','), an.monthlyPeakTimes[i], n(an.monthlyKwh[i]), isFinite(caps[i]) && caps[i] < an.monthlyPeaks[i] ? n(caps[i]) : ''].join(';')));

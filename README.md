@@ -25,6 +25,7 @@ Die Beispiel-Schaltflächen funktionieren nur in der Online-Version (oder über 
 - Detail-Aufschlüsselung für den eigenen Netzbereich (Pauschale/Leistungspreis, Arbeitspreis, Netzverlust, Messentgelt)
 - Monatliche Leistungsspitzen mit Staffelgrenze (10 kW) und Mindestleistung (2 kW)
 - Was-wäre-wenn: Spitzenkappung (Lastmanagement, Batterie, Wallbox drosseln) – eine Grenze fürs ganze Jahr oder aufklappbar je Monat (z. B. im Winter strenger als im Sommer)
+- Was-wäre-wenn: flexible Entnahme (Flex-Tarif) – fixe Leistungszone und zwei Sperrfenster wählen; Geräte gedrosselt (keine Strafe) oder Lastprofil wie gemessen (zehnfacher Leistungspreis für Überschreitungen), mit Erklärung des Tarifs
 - Top-10-Viertelstunden, CSV-Export, brutto/netto-Umschaltung
 - Hochrechnung bei unvollständigen Daten
 - Alle Tarife im Tool editierbar (werden im Browser gespeichert)
@@ -53,12 +54,15 @@ Im [Kundenportal der Vorarlberg-Netz](https://webportal.vorarlbergnetz.at/Consum
 
 **2027 Leistungstarif:** je Kalendermonat die höchste Viertelstunde (mindestens 2 kW); bis 10 kW zum Grundsatz, der Anteil darüber zum höheren Satz. Dazu Arbeitspreis × kWh + Netzverlust × kWh. Pauschale und Messentgelt entfallen.
 
+**2027 flexible Entnahme (optional):** Monatsspitze bis zur fixen Leistungszone zum normalen Leistungspreis, darüber zum verringerten Flex-Preis (rund 25 %, § 10 Abs. 1 Entwurf SNE-T-V 2027). Wird die fixe Zone in einem Sperrfenster (2 × 2 h täglich) überschritten, kommt der zehnfache Leistungspreis für die Überschreitung dazu (§ 10 Abs. 3) – wahlweise je Sperrfenster oder je Monat, da der Entwurf das offen lässt.
+
 ## Datenquellen und Einschränkungen
 
 - **2026:** SNE-V 2018 i. d. F. 2026, laut [fixkostenreduzierer.at](https://www.fixkostenreduzierer.at/ratgeber/netzentgelt-erklaert)
 - **2027:** Begutachtungsentwurf SNE-T-V 2027 der E-Control vom 29.10.2026, laut [stromliste.at](https://stromliste.at/strompreis/zusammensetzung/netzentgelte/leistungstarif) – **noch nicht verbindlich**
 - Netzverlust 2027 ist im Entwurf nicht veröffentlicht – es wird der Wert von 2026 angenommen
-- Nicht berücksichtigt: SNAP/WiNAP-Rabatte, flexible Leistung (−75 %), Energiegemeinschaften, Abgaben und Energiepreis
+- Flex-Preise aus dem [Begutachtungsentwurf der E-Control](https://www.e-control.at/documents/d/guest/snt-v-2027-begutachtungsentwurf-pdf) (§ 10); Sperrzeiten, 4-kW-Regeln und Vertragsdauer laut stromliste.at und help.ORF.at
+- Nicht berücksichtigt: SNAP/WiNAP-Rabatte, Energiegemeinschaften, Abgaben und Energiepreis
 - Umstellung für Haushalte frühestens 1.12.2027, spätestens 1.7.2028 – bis dahin gilt eine Übergangspauschale
 - Hintergrund: [help.ORF.at – Stromnetztarife](https://help.orf.at/stories/3237714/)
 
